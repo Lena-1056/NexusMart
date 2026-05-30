@@ -1,0 +1,66 @@
+erDiagram
+    USERS ||--o{ ORDERS : places
+    USERS ||--o{ REVIEWS : writes
+    SELLERS ||--o{ PRODUCTS : sells
+    PRODUCTS ||--o{ REVIEWS : receives
+    ORDERS ||--o{ PAYMENTS : generates
+    ORDERS ||--o{ SHIPMENTS : requires
+    ORDERS }|--|{ PRODUCTS : contains
+
+    USERS {
+        string id PK
+        string email
+        string name
+        string role
+        timestamp created_at
+    }
+    
+    SELLERS {
+        string id PK
+        string store_name
+        string email
+        string status
+        float revenue
+    }
+    
+    PRODUCTS {
+        string id PK
+        string name
+        string seller FK
+        string category
+        float price
+        string status
+    }
+    
+    ORDERS {
+        string id PK
+        string user_id FK
+        float total_amount
+        string status
+        timestamp created_at
+    }
+    
+    PAYMENTS {
+        string id PK
+        string order_id FK
+        string method
+        string status
+        float amount
+    }
+    
+    SHIPMENTS {
+        string tracking_id PK
+        string order_id FK
+        string courier_id
+        string status
+        string origin_hub
+        string dest_hub
+    }
+    
+    REVIEWS {
+        string id PK
+        string product_id FK
+        string user_id FK
+        int rating
+        string comment
+    }

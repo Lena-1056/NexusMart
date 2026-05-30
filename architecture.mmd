@@ -1,0 +1,61 @@
+graph TD
+    %% Frontends
+    subgraph Frontends["Frontend Portals (React + Vite)"]
+        CA[Customer App]
+        SD[Seller Dashboard]
+        AD[Admin Dashboard]
+        DP[Delivery Partner App]
+    end
+
+    %% Gateway
+    AG[API Gateway]
+
+    %% Backend Services
+    subgraph Services["Microservices Ecosystem"]
+        direction TB
+        Auth[Auth Service]
+        Order[Order Service]
+        Ship[Shipping Service]
+        Pay[Payment Service]
+        Prod[Product Service]
+        Inv[Inventory Service]
+        Sel[Seller Service]
+        User[User Service]
+    end
+
+    %% Database
+    DB[(PostgreSQL Database)]
+
+    %% Connections
+    CA -->|HTTP Requests| AG
+    SD -->|HTTP Requests| AG
+    AD -->|HTTP Requests| AG
+    DP -->|HTTP Requests| AG
+
+    AG -->|Routes| Auth
+    AG -->|Routes| Order
+    AG -->|Routes| Prod
+    AG -->|Routes| Sel
+
+    Order -->|Triggers| Ship
+    Order -->|Triggers| Pay
+    Prod -->|Updates| Inv
+    
+    Auth -.-> DB
+    Order -.-> DB
+    Ship -.-> DB
+    Pay -.-> DB
+    Prod -.-> DB
+    Sel -.-> DB
+    User -.-> DB
+
+    %% Styling
+    classDef frontend fill:#61DAFB,stroke:#333,stroke-width:2px,color:#000;
+    classDef gateway fill:#FF9900,stroke:#333,stroke-width:2px,color:#000;
+    classDef backend fill:#85EA2D,stroke:#333,stroke-width:2px,color:#000;
+    classDef db fill:#336791,stroke:#333,stroke-width:2px,color:#fff;
+
+    class CA,SD,AD,DP frontend;
+    class AG gateway;
+    class Auth,Order,Ship,Pay,Prod,Inv,Sel,User backend;
+    class DB db;
