@@ -48,7 +48,7 @@ app = FastAPI(title="Seller Service", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -444,3 +444,4 @@ def update_order_status(order_id: str, body: StatusUpdate):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("main:app", host="0.0.0.0", port=8090, reload=True)
+
