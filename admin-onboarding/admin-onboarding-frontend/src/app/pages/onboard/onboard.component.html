@@ -1,0 +1,64 @@
+<div class="auth-bg">
+  <div class="auth-card wide-card">
+    <div class="auth-logo">🏢</div>
+    <h1>Onboard New Admin</h1>
+    <p class="auth-sub">Organisation Onboarding Team Portal — create a new system administrator account.</p>
+
+    <!-- Success -->
+    <div class="success-banner" *ngIf="success">
+      <div class="success-icon-sm">✅</div>
+      <div>
+        <strong>Admin onboarded successfully!</strong><br/>
+        <span>A welcome email with login credentials has been sent to <strong>{{ success.email || 'the admin' }}</strong>.</span>
+      </div>
+    </div>
+
+    <div class="error-box" *ngIf="error">{{ error }}</div>
+
+    <form (ngSubmit)="submit()">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" [(ngModel)]="name" name="name" placeholder="e.g. John Smith" class="form-control" />
+        </div>
+        <div class="form-group">
+          <label>Email Address</label>
+          <input type="email" [(ngModel)]="email" name="email" placeholder="admin@company.com" class="form-control" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Temporary Password</label>
+        <div class="password-wrap">
+          <input
+            [type]="showTempPwd ? 'text' : 'password'"
+            [(ngModel)]="tempPassword"
+            name="tempPassword"
+            placeholder="Set a temporary password"
+            class="form-control"
+          />
+          <button type="button" class="toggle-btn" (click)="showTempPwd = !showTempPwd">
+            {{ showTempPwd ? '🙈' : '👁️' }}
+          </button>
+        </div>
+        <button type="button" class="generate-btn" (click)="generatePassword()">⚡ Generate Strong Password</button>
+        <div class="temp-pwd-preview" *ngIf="tempPassword && showTempPwd">
+          <code>{{ tempPassword }}</code>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Onboarded By <span class="optional">(optional)</span></label>
+        <input type="text" [(ngModel)]="onboardedBy" name="onboardedBy" placeholder="Your name or team" class="form-control" />
+      </div>
+
+      <button type="submit" class="btn-primary" [disabled]="loading">
+        {{ loading ? 'Creating Admin...' : '🚀 Onboard Admin & Send Email' }}
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      <a routerLink="/login">Admin Login →</a>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,31 @@
+<div class="auth-bg">
+  <div class="notif-card">
+    <div class="notif-header">
+      <div>
+        <h1>🔔 Notifications</h1>
+        <p class="auth-sub">Activity log for <strong>{{ adminName }}</strong> ({{ adminEmail }})</p>
+      </div>
+      <button class="btn-outline" (click)="goToDashboard()">Go to Dashboard →</button>
+    </div>
+
+    <div class="loading-state" *ngIf="loading">Loading notifications...</div>
+    <div class="error-box" *ngIf="error">{{ error }}</div>
+
+    <div class="notif-empty" *ngIf="!loading && notifications.length === 0">
+      <div style="font-size:48px;margin-bottom:12px;">🔕</div>
+      No notifications yet.
+    </div>
+
+    <div class="notif-list" *ngIf="!loading && notifications.length > 0">
+      <div class="notif-item" *ngFor="let n of notifications" [class.unread]="!n.read">
+        <div class="notif-icon">{{ typeIcon[n.type] || '📢' }}</div>
+        <div class="notif-body">
+          <div class="notif-type">{{ typeLabel[n.type] || n.type }}</div>
+          <div class="notif-msg">{{ n.message }}</div>
+          <div class="notif-time">{{ formatDate(n.createdAt) }}</div>
+        </div>
+        <div class="notif-dot" *ngIf="!n.read"></div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,48 @@
+<div class="auth-bg">
+  <div class="auth-card">
+    <div class="auth-logo">🛡️</div>
+    <h1>Admin Portal Login</h1>
+    <p class="auth-sub">Sign in with your administrator credentials</p>
+
+    <div class="error-box" *ngIf="error">{{ error }}</div>
+
+    <form (ngSubmit)="login()">
+      <div class="form-group">
+        <label>Email Address</label>
+        <input
+          type="email"
+          [(ngModel)]="email"
+          name="email"
+          placeholder="admin@company.com"
+          class="form-control"
+          autocomplete="email"
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <div class="password-wrap">
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            [(ngModel)]="password"
+            name="password"
+            placeholder="Enter your password"
+            class="form-control"
+            autocomplete="current-password"
+          />
+          <button type="button" class="toggle-btn" (click)="togglePassword()" [title]="showPassword ? 'Hide' : 'Show'">
+            {{ showPassword ? '🙈' : '👁️' }}
+          </button>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-primary" [disabled]="loading">
+        {{ loading ? 'Signing in...' : 'Sign In' }}
+      </button>
+    </form>
+
+    <div class="auth-footer">
+      <p>New admin? Contact your organisation's onboarding team.</p>
+    </div>
+  </div>
+</div>
