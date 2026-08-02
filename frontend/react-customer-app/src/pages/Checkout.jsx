@@ -239,7 +239,7 @@ export default function Checkout({ customer }) {
         setLoading(false)
       }
     } catch (err) {
-      setPaymentError("Checkout failed. Please try again.")
+      setPaymentError("Checkout failed: " + err.message)
       setLoading(false)
     }
   }

@@ -98,6 +98,8 @@ export default function DeliveryDashboard() {
   const [updating, setUpdating] = useState(null);
   const [showCodModal, setShowCodModal] = useState(null);
   const [tab, setTab] = useState('active'); // 'active' | 'delivered'
+  const [otpSent, setOtpSent] = useState({});
+  const [otpInput, setOtpInput] = useState({});
   const navigate = useNavigate();
   const courier = JSON.parse(localStorage.getItem('courier'));
 
@@ -164,18 +166,42 @@ export default function DeliveryDashboard() {
     await executeUpdate(trackingId, newStatus);
   };
 
+  const handleSendOtp = async (trackingId) => {
+    setUpdating(trackingId);
+    try {
+        const res = await fetch(`${API_BASE}/api/shipping/${trackingId}/send-otp`, { method: 'POST' });
+        if (res.ok) {
+            setOtpSent({ ...otpSent, [trackingId]: true });
+            // alert removed, using inline message instead
+        } else {
+            const err = await res.json();
+            alert(err.error || 'Failed to send OTP.');
+        }
+    } catch (e) {
+        alert('Error sending OTP.');
+    } finally {
+        setUpdating(null);
+    }
+  };
+
   const executeUpdate = async (trackingId, newStatus) => {
     setUpdating(trackingId);
     try {
+      const payload = { status: newStatus, courierId: courier.id };
+      if (newStatus === 'DELIVERED') {
+          payload.otp = otpInput[trackingId];
+      }
+      
       const res = await fetch(`${API_BASE}/api/shipping/${trackingId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus, courierId: courier.id })
+        body: JSON.stringify(payload)
       });
       if (res.ok) {
         fetchShipments();
       } else {
-        alert('Failed to update status');
+        const err = await res.json();
+        alert(err.error || 'Failed to update status');
       }
     } catch (e) {
       console.error('Error updating status:', e);
@@ -374,26 +400,63 @@ export default function DeliveryDashboard() {
                     </button>
                   )}
                   {shipment.status === 'OUT_FOR_DELIVERY' && (
-                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', flexDirection: 'column' }}>
+                      {otpSent[shipment.trackingId] && (
+                        <div style={{
+                          background: 'rgba(16, 185, 129, 0.15)',
+                          color: '#10b981',
+                          padding: '10px',
+                          borderRadius: '8px',
+                          textAlign: 'center',
+                          fontWeight: 'bold',
+                          border: '1px solid rgba(16, 185, 129, 0.3)'
+                        }}>
+                          ✅ OTP sent successfully to customer
+                        </div>
+                      )}
                       <button
                         onClick={() => openMaps(shipment)}
                         style={{
                           background: 'linear-gradient(135deg, #4285f4, #34a853)',
                           color: '#fff', border: 'none', borderRadius: 10,
                           padding: '10px 18px', fontSize: 14, fontWeight: 700,
-                          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6
+                          cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6,
+                          width: '100%', justifyContent: 'center'
                         }}
                       >
                         🗺️ Navigate to Customer
                       </button>
-                      <button
-                        className="btn success"
-                        disabled={updating === shipment.trackingId}
-                        onClick={() => handleUpdateStatus(shipment.trackingId, 'DELIVERED')}
-                        style={{ flex: 1 }}
-                      >
-                        {updating === shipment.trackingId ? 'Updating...' : '✅ Mark as Delivered'}
-                      </button>
+                      
+                      {!otpSent[shipment.trackingId] ? (
+                          <button
+                            className="btn primary"
+                            disabled={updating === shipment.trackingId}
+                            onClick={() => handleSendOtp(shipment.trackingId)}
+                            style={{ width: '100%' }}
+                          >
+                            {updating === shipment.trackingId ? 'Sending...' : '📩 Send OTP to Customer'}
+                          </button>
+                      ) : (
+                          <div style={{ display: 'flex', gap: 10, width: '100%' }}>
+                              <input 
+                                  type="text" 
+                                  placeholder="Enter 6-digit OTP" 
+                                  className="form-input" 
+                                  value={otpInput[shipment.trackingId] || ''}
+                                  onChange={e => setOtpInput({...otpInput, [shipment.trackingId]: e.target.value})}
+                                  maxLength={6}
+                                  style={{ flex: 1, fontWeight: 'bold' }}
+                              />
+                              <button
+                                className="btn success"
+                                disabled={updating === shipment.trackingId || (otpInput[shipment.trackingId] || '').length !== 6}
+                                onClick={() => handleUpdateStatus(shipment.trackingId, 'DELIVERED')}
+                                style={{ flex: 1 }}
+                              >
+                                {updating === shipment.trackingId ? 'Verifying...' : '✅ Confirm Delivery'}
+                              </button>
+                          </div>
+                      )}
                     </div>
                   )}
                 </div>

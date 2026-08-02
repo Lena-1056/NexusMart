@@ -84,20 +84,26 @@ export default function ProductDetails({ customer, deliveryLocation, setIsLocMod
   }
 
   const handleAddToCart = async () => {
-    if (!customer) return navigate('/login')
+    if (!customer) {
+      navigate('/login')
+      return false
+    }
     setAddingToCart(true)
     try {
-      await fetch(`${SERVICES.CART}/cart/add`, {
+      const res = await fetch(`${SERVICES.CART}/cart/add`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ email: customer.email, productId: id, quantity: qty })
       })
+      if (!res.ok) throw new Error('Failed to add to cart')
       setCartMessage('Added to cart successfully!')
       setTimeout(() => setCartMessage(''), 3000)
+      return true
     } catch (err) {
       console.error(err)
       setCartMessage('Failed to add to cart.')
       setTimeout(() => setCartMessage(''), 3000)
+      return false
     } finally {
       setAddingToCart(false)
     }
@@ -341,7 +347,10 @@ export default function ProductDetails({ customer, deliveryLocation, setIsLocMod
               </button>
               
               <button 
-                onClick={() => { handleAddToCart(); navigate('/cart'); }}
+                onClick={async () => { 
+                  const success = await handleAddToCart(); 
+                  if (success) navigate('/cart'); 
+                }}
                 className="amz-btn-orange"
                 style={{ width: '100%', padding: '10px' }}
               >

@@ -318,7 +318,7 @@ export default function App() {
             <Route path="/checkout" element={customer ? <Checkout customer={customer} /> : <LoginRegister onLogin={handleLogin} />} />
             <Route path="/orders" element={customer ? <MyOrders customer={customer} /> : <LoginRegister onLogin={handleLogin} />} />
             <Route path="/wishlist" element={customer ? <Wishlist customer={customer} /> : <LoginRegister onLogin={handleLogin} />} />
-            <Route path="/profile" element={customer ? <Profile customer={customer} handleLogout={handleLogout} /> : <LoginRegister onLogin={handleLogin} />} />
+            <Route path="/profile" element={customer ? <Profile customer={customer} handleLogout={handleLogout} setDeliveryLocation={setDeliveryLocation} /> : <LoginRegister onLogin={handleLogin} />} />
           </Routes>
         </Layout>
       </BrowserRouter>

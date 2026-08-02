@@ -121,6 +121,16 @@ export default function Profile({ customer, handleLogout }) {
       })
       const data = await res.json()
       setAddresses(data)
+      if (setDeliveryLocation && Array.isArray(data)) {
+        const def = data.find(addr => addr.is_default);
+        if (def) {
+          setDeliveryLocation({ name: def.full_name || customer.name, address: `${def.city} ${def.pincode}`, fullAddress: `${def.flat}, ${def.area}, ${def.city}, ${def.state} ${def.pincode}` });
+        } else if (data.length > 0) {
+          setDeliveryLocation({ name: data[0].full_name || customer.name, address: `${data[0].city} ${data[0].pincode}`, fullAddress: `${data[0].flat}, ${data[0].area}, ${data[0].city}, ${data[0].state} ${data[0].pincode}` });
+        } else {
+          setDeliveryLocation(null);
+        }
+      }
     } catch (e) { console.error(e) }
   }
 

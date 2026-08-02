@@ -37,8 +37,8 @@ export default function Login({ mode, onLogin }) {
           throw new Error(errText || 'Failed to register. Email may be taken.')
         }
         const data = await res.json()
-        setSuccess('Registration successful! Please sign in.')
-        // navigate('/login') // Removed navigate so they can see the message on the same screen
+        setSuccess('Registration successful! Redirecting to login...')
+        setTimeout(() => navigate('/login'), 2000)
         setStore(''); setOwner(''); setEmail(''); setPassword(''); setAddress('');
       } else {
         const res = await fetch(`${API_BASE}/api/sellers/login`, {
@@ -144,6 +144,11 @@ export default function Login({ mode, onLogin }) {
                 {showPassword ? "👁️" : "🙈"}
               </button>
             </div>
+            {!isRegister && (
+              <div style={{ textAlign: 'right', marginTop: '8px' }}>
+                <button type="button" onClick={() => navigate('/forgot-password')} style={{ background: 'none', border: 'none', color: '#6366f1', cursor: 'pointer', fontSize: '14px', padding: 0 }}>Forgot Password?</button>
+              </div>
+            )}
           </div>
 
           <button type="submit" className="login-btn" disabled={loading}>

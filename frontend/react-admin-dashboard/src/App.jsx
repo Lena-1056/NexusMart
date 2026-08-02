@@ -19,9 +19,21 @@ import './index.css'
 
 export default function App() {
   // Persist auth in localStorage using real JWT token
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    () => !!localStorage.getItem('adminToken')
-  )
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) return false;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        localStorage.removeItem('adminToken');
+        localStorage.removeItem('adminData');
+        return false;
+      }
+      return true;
+    } catch(e) {
+      return false;
+    }
+  })
 
   const handleLogin = (token, adminData) => {
     localStorage.setItem('adminToken', token)

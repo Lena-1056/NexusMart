@@ -6,6 +6,7 @@ export default function LoginRegister({ onLogin }) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -89,14 +90,28 @@ export default function LoginRegister({ onLogin }) {
         </div>
         <div className="form-group">
           <label className="form-label">Password</label>
-          <input 
-            required 
-            type="password" 
-            value={password} 
-            onChange={e => setPassword(e.target.value)}
-            className="form-input"
-            placeholder="••••••••"
-          />
+          <div style={{position: 'relative', display: 'flex', alignItems: 'center'}}>
+            <input 
+              required 
+              type={showPassword ? "text" : "password"} 
+              value={password} 
+              onChange={e => setPassword(e.target.value)}
+              className="form-input"
+              placeholder="••••••••"
+              style={{width: '100%', paddingRight: '40px'}}
+            />
+            <button 
+              type="button" 
+              onClick={() => setShowPassword(s => !s)}
+              title={showPassword ? "Hide Password" : "Show Password"}
+              style={{
+                position: 'absolute', right: '10px', background: 'transparent', 
+                border: 'none', cursor: 'pointer', fontSize: '1.2rem', padding: 0
+              }}
+            >
+              {showPassword ? "👁️" : "🙈"}
+            </button>
+          </div>
         </div>
         <button 
           disabled={loading}

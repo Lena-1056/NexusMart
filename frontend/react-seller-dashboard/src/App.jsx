@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import Login from './pages/Login'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 // Will implement these next
 import Dashboard from './pages/Dashboard'
 import MyProducts from './pages/MyProducts'
@@ -47,6 +49,8 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<Login key="login" mode="login" onLogin={handleLogin} />} />
             <Route path="/register" element={<Login key="register" mode="register" onLogin={handleLogin} />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         ) : (
