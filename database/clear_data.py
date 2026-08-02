@@ -12,6 +12,10 @@ tables = [
     'products_schema.products',
     'sellers_schema.sellers',
     'users_schema.users',
+    'carts_schema.carts',
+    'wishlists_schema.wishlists',
+    'onboarding_schema.admin_users',
+    'onboarding_schema.admin_notifications',
 ]
 
 for t in tables:
