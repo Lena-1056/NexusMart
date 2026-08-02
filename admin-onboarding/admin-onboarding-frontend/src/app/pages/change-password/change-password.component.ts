@@ -45,7 +45,7 @@ export class ChangePasswordComponent implements OnInit {
         this.success = true;
         this.loading = false;
         // Redirect to admin dashboard after 3s
-        setTimeout(() => { window.location.href = 'http://localhost:5173'; }, 3000);
+        setTimeout(() => { window.location.href = 'http://localhost:5175'; }, 3000);
       },
       error: (err) => {
         this.error = err.error?.error || 'Failed to change password.';
