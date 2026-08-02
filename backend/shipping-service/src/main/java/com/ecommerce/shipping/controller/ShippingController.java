@@ -86,6 +86,7 @@ public class ShippingController {
         shipment.setDestHub(destHub);
         shipment.setDeliveryAddress(deliveryAddress);
         shipment.setOriginAddress(originAddress);
+        shipment.setCustomerEmail(request.get("customerEmail"));
         
         shipmentRepository.save(shipment);
         
@@ -169,6 +170,64 @@ public class ShippingController {
         
         return ResponseEntity.ok(Map.of("eta", "3-5 days"));
     }
+    
+    private void sendNotification(String recipient, String message) {
+        if (recipient == null || recipient.isEmpty()) return;
+        try {
+            java.util.Map<String, String> req = new java.util.HashMap<>();
+            req.put("recipient", recipient);
+            req.put("message", message);
+            restTemplate.postForEntity("http://localhost:8091/api/notifications/email", req, String.class);
+        } catch (Exception e) {
+            System.err.println("Failed to send notification: " + e.getMessage());
+        }
+    }
+
+    private void sendHtmlNotification(String recipient, String subject, String html) {
+        if (recipient == null || recipient.isEmpty()) return;
+        try {
+            java.util.Map<String, Object> req = new java.util.HashMap<>();
+            req.put("recipient", recipient);
+            req.put("subject", subject);
+            req.put("message", html);
+            req.put("isHtml", true);
+            restTemplate.postForEntity("http://localhost:8091/api/notifications/email", req, String.class);
+        } catch (Exception e) {
+            System.err.println("Failed to send HTML notification: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/{trackingId}/send-otp")
+    public ResponseEntity<?> sendOtp(@PathVariable String trackingId) {
+        Optional<Shipment> shipmentOpt = shipmentRepository.findByTrackingId(trackingId);
+        if (shipmentOpt.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+        Shipment shipment = shipmentOpt.get();
+        if (shipment.getCustomerEmail() == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "No customer email found for this shipment."));
+        }
+        
+        // Generate 6 digit OTP
+        String otp = String.format("%06d", new java.util.Random().nextInt(999999));
+        shipment.setDeliveryOtp(otp);
+        shipmentRepository.save(shipment);
+        
+        String html = "<html><body style='font-family: Arial, sans-serif; background-color: #f6f6f6; margin: 0; padding: 20px;'>" +
+            "<div style='max-width: 500px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;'>" +
+            "<div style='background-color: #008296; color: #fff; padding: 15px; border-radius: 8px 8px 0 0; font-size: 20px; font-weight: bold; margin: -30px -30px 30px -30px;'>" +
+            "NexusMart Delivery" +
+            "</div>" +
+            "<h2 style='color: #333; margin-top: 0;'>Your Delivery OTP</h2>" +
+            "<p style='color: #555; font-size: 16px;'>Your order <strong>" + shipment.getOrderId() + "</strong> is out for delivery!</p>" +
+            "<p style='color: #555; font-size: 16px;'>Please share the following OTP with the delivery partner to receive your package:</p>" +
+            "<div style='background-color: #f0f8ff; border: 2px dashed #008296; padding: 20px; font-size: 36px; font-weight: bold; color: #008296; letter-spacing: 10px; margin: 30px 0; border-radius: 8px;'>" + otp + "</div>" +
+            "<p style='color: #888; font-size: 14px; margin-bottom: 0;'>For your security, do not share this OTP with anyone else.</p>" +
+            "</div></body></html>";
+            
+        sendHtmlNotification(shipment.getCustomerEmail(), "Delivery OTP for Order " + shipment.getOrderId(), html);
+        return ResponseEntity.ok(Map.of("message", "OTP sent successfully"));
+    }
 
     @PutMapping("/{trackingId}/status")
     public ResponseEntity<?> updateStatus(@PathVariable String trackingId, @RequestBody Map<String, String> request) {
@@ -179,6 +238,16 @@ public class ShippingController {
         
         Shipment shipment = shipmentOpt.get();
         String newStatus = request.get("status");
+        
+        if ("DELIVERED".equals(newStatus)) {
+            String providedOtp = request.get("otp");
+            if (providedOtp == null || shipment.getDeliveryOtp() == null || !providedOtp.equals(shipment.getDeliveryOtp())) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Invalid OTP"));
+            }
+            // OTP is valid, clear it
+            shipment.setDeliveryOtp(null);
+        }
+        
         shipment.setStatus(newStatus);
         
         if (request.containsKey("courierId")) {
@@ -213,6 +282,8 @@ public class ShippingController {
             // Log error, but proceed
             System.err.println("Failed to notify order-service: " + e.getMessage());
         }
+        
+        // Order-service will automatically send HTML emails for OUT_FOR_DELIVERY and DELIVERED
         
         return ResponseEntity.ok(shipment);
     }

@@ -90,7 +90,7 @@ public class OrderController {
         // Call Inventory Service to reserve stock
         try {
             ResponseEntity<String> invRes = restTemplate.postForEntity(
-                "http://localhost:8085/api/inventory/reserve?productId=" + order.product + "&quantity=1", 
+                "http://localhost:8098/api/inventory/reserve?productId=" + order.product + "&quantity=1", 
                 null, String.class);
             if (!invRes.getStatusCode().is2xxSuccessful()) {
                 return ResponseEntity.badRequest().build(); // Out of stock
@@ -105,6 +105,11 @@ public class OrderController {
             order.status = "CREATED";
             orderRepository.save(order);
             sendNotification(order.seller, "New order received (COD)! Product: " + order.product + ". Delivery Location: " + order.address);
+            
+            Map<String, String> pInfo = getProductInfo(order.product);
+            String html = generateOrderHtml(order, pInfo.get("name"), pInfo.get("image"));
+            sendHtmlNotification(order.customer, "Ordered: " + pInfo.get("name"), html);
+            
             return ResponseEntity.ok(order);
         }
         
@@ -157,6 +162,10 @@ public class OrderController {
                     // Notify seller
                     sendNotification(order.seller, "New order received (PAID)! Product: " + order.product + ". Delivery Location: " + order.address);
                     
+                    Map<String, String> pInfo = getProductInfo(order.product);
+                    String html = generateOrderHtml(order, pInfo.get("name"), pInfo.get("image"));
+                    sendHtmlNotification(order.customer, "Order Update: " + pInfo.get("name"), html);
+                    
                     return ResponseEntity.ok(order);
                 }
             }
@@ -175,7 +184,11 @@ public class OrderController {
             o.status = "ACCEPTED";
             o.updatedAt = Instant.now().toString();
             orderRepository.save(o);
-            sendNotification(o.customer, "Your order " + o.id + " has been accepted by the seller.");
+            
+            Map<String, String> pInfo = getProductInfo(o.product);
+            String html = generateOrderHtml(o, pInfo.get("name"), pInfo.get("image"));
+            sendHtmlNotification(o.customer, "Order Update: " + pInfo.get("name"), html);
+            
             return ResponseEntity.ok(o);
         }
         return ResponseEntity.notFound().build();
@@ -194,8 +207,12 @@ public class OrderController {
             }
             orderRepository.save(o);
             // Release inventory
-            restTemplate.postForEntity("http://localhost:8085/api/inventory/release?productId=" + o.product + "&quantity=1", null, String.class);
-            sendNotification(o.customer, "Your order " + o.id + " was rejected by the seller.");
+            restTemplate.postForEntity("http://localhost:8098/api/inventory/release?productId=" + o.product + "&quantity=1", null, String.class);
+            
+            Map<String, String> pInfo = getProductInfo(o.product);
+            String html = generateOrderHtml(o, pInfo.get("name"), pInfo.get("image"));
+            sendHtmlNotification(o.customer, "Order Update: " + pInfo.get("name"), html);
+            
             return ResponseEntity.ok(o);
         }
         return ResponseEntity.notFound().build();
@@ -248,6 +265,7 @@ public class OrderController {
                 shipReq.put("sellerLocation", actualSellerLocation); 
                 shipReq.put("originAddress", actualSellerAddress != null ? actualSellerAddress : actualSellerLocation);
                 shipReq.put("destHub", o.customerCity != null ? o.customerCity : "Mumbai");
+                shipReq.put("customerEmail", o.customer);
                 shipReq.put("paymentMethod", o.payment != null ? o.payment : "PAID");
                 shipReq.put("amount", String.valueOf(o.amount));
                 shipReq.put("deliveryAddress", o.address != null ? o.address : (o.customerCity != null ? o.customerCity : ""));
@@ -260,8 +278,12 @@ public class OrderController {
             }
 
             orderRepository.save(o);
-            sendNotification(o.customer, "Your order for product " + o.product + " has been shipped. Tracking ID: " + (o.trackingId != null ? o.trackingId : "Pending"));
             sendNotification(o.seller, "You have successfully dispatched order " + o.id + ".");
+            
+            Map<String, String> pInfo = getProductInfo(o.product);
+            String html = generateOrderHtml(o, pInfo.get("name"), pInfo.get("image"));
+            sendHtmlNotification(o.customer, "Order Update: " + pInfo.get("name"), html);
+            
             return ResponseEntity.ok(o);
         }
         return ResponseEntity.notFound().build();
@@ -283,7 +305,9 @@ public class OrderController {
                     updateSellerRevenue(o.seller, o.amount);
                 }
                 
-                sendNotification(o.customer, "Your order " + o.id + " has been delivered!");
+                Map<String, String> pInfo = getProductInfo(o.product);
+                String html = generateOrderHtml(o, pInfo.get("name"), pInfo.get("image"));
+                sendHtmlNotification(o.customer, "Order Update: " + pInfo.get("name"), html);
             }
             return ResponseEntity.ok(o);
         }
@@ -305,6 +329,13 @@ public class OrderController {
                 }
             }
             orderRepository.save(o);
+            
+            if ("OUT_FOR_DELIVERY".equals(newStatus) || "DELIVERED".equals(newStatus)) {
+                Map<String, String> pInfo = getProductInfo(o.product);
+                String html = generateOrderHtml(o, pInfo.get("name"), pInfo.get("image"));
+                sendHtmlNotification(o.customer, "Order Update: " + pInfo.get("name"), html);
+            }
+            
             return ResponseEntity.ok(o);
         }
         return ResponseEntity.notFound().build();
@@ -330,10 +361,17 @@ public class OrderController {
             orderRepository.save(o);
 
             // Release inventory
-            restTemplate.postForEntity("http://localhost:8085/api/inventory/release?productId=" + o.product + "&quantity=1", null, String.class);
+            try {
+                restTemplate.postForEntity("http://localhost:8098/api/inventory/release?productId=" + o.product + "&quantity=1", null, String.class);
+            } catch (Exception e) {
+                System.err.println("Inventory release failed: " + e.getMessage());
+            }
 
-            sendNotification(o.customer, "Your order " + o.id + " for product " + o.product + " has been cancelled.");
             sendNotification(o.seller, "Order " + o.id + " for product " + o.product + " has been cancelled by the customer.");
+            
+            Map<String, String> pInfo = getProductInfo(o.product);
+            String html = generateOrderHtml(o, pInfo.get("name"), pInfo.get("image"));
+            sendHtmlNotification(o.customer, "Order Update: " + pInfo.get("name"), html);
             
             return ResponseEntity.ok(o);
         }
@@ -354,10 +392,140 @@ public class OrderController {
             Map<String, String> req = new HashMap<>();
             req.put("recipient", recipient);
             req.put("message", message);
-            restTemplate.postForEntity("http://localhost:8086/api/notifications/email", req, String.class);
+            restTemplate.postForEntity("http://localhost:8091/api/notifications/email", req, String.class);
         } catch (Exception e) {
             System.err.println("Failed to send notification: " + e.getMessage());
         }
+    }
+
+    private void sendHtmlNotification(String recipient, String subject, String message) {
+        try {
+            Map<String, Object> req = new HashMap<>();
+            req.put("recipient", recipient);
+            req.put("subject", subject);
+            req.put("message", message);
+            req.put("isHtml", true);
+            restTemplate.postForEntity("http://localhost:8091/api/notifications/email", req, String.class);
+        } catch (Exception e) {
+            System.err.println("Failed to send HTML notification: " + e.getMessage());
+        }
+    }
+
+    private Map<String, String> getProductInfo(String productId) {
+        try {
+            ResponseEntity<List> productsRes = restTemplate.getForEntity("http://localhost:8084/api/products", List.class);
+            if (productsRes.getStatusCode().is2xxSuccessful() && productsRes.getBody() != null) {
+                List<Map<String, Object>> allProducts = (List<Map<String, Object>>) productsRes.getBody();
+                for (Map<String, Object> p : allProducts) {
+                    if (productId.equals(p.get("id"))) {
+                        Map<String, String> info = new HashMap<>();
+                        info.put("name", (String) p.get("name"));
+                        String emoji = (String) p.get("emoji");
+                        if (emoji != null && emoji.startsWith("data:image")) {
+                            emoji = emoji.split("\\|\\|")[0];
+                        }
+                        info.put("image", emoji != null ? emoji : "");
+                        return info;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to fetch product info: " + e.getMessage());
+        }
+        Map<String, String> def = new HashMap<>();
+        def.put("name", "Product " + productId);
+        def.put("image", "");
+        return def;
+    }
+
+    private String generateOrderHtml(Order order, String productName, String productImgUrl) {
+        boolean isShipped = "DISPATCHED".equals(order.status) || "SHIPPED".equals(order.status) || "IN_TRANSIT".equals(order.status) || "OUT_FOR_DELIVERY".equals(order.status) || "DELIVERED".equals(order.status);
+        boolean isOut = "OUT_FOR_DELIVERY".equals(order.status) || "DELIVERED".equals(order.status);
+        boolean isDelivered = "DELIVERED".equals(order.status);
+
+        String cShipped = isShipped ? "#008296" : "#ddd";
+        String tShipped = isShipped ? "color: #008296; font-weight: bold;" : "color: #767676;";
+        String sShipped = isShipped ? "✓" : "";
+
+        String cOut = isOut ? "#008296" : "#ddd";
+        String tOut = isOut ? "color: #008296; font-weight: bold;" : "color: #767676;";
+        String sOut = isOut ? "✓" : "";
+
+        String cDel = isDelivered ? "#008296" : "#ddd";
+        String tDel = isDelivered ? "color: #008296; font-weight: bold;" : "color: #767676;";
+        String sDel = isDelivered ? "✓" : "";
+
+        boolean isCancelled = "CANCELLED".equals(order.status) || "REJECTED_BY_SELLER".equals(order.status);
+        String title = "Thanks for your order!";
+        if (isCancelled) {
+            title = "Your order has been cancelled";
+        } else if ("ACCEPTED".equals(order.status)) {
+            title = "Your order has been accepted!";
+        } else if ("DISPATCHED".equals(order.status) || "SHIPPED".equals(order.status) || "IN_TRANSIT".equals(order.status)) {
+            title = "Your order has been shipped!";
+        } else if ("OUT_FOR_DELIVERY".equals(order.status)) {
+            title = "Your order is out for delivery!";
+        } else if ("DELIVERED".equals(order.status)) {
+            title = "Your order has been delivered!";
+        }
+        String titleColor = isCancelled ? "#d9534f" : "#000";
+
+        String progressHtml = "";
+        if (isCancelled) {
+            progressHtml = "<div style='text-align: center; color: #d9534f; margin: 30px 0; font-size: 18px; font-weight: bold; background-color: #fdf0ef; padding: 15px; border-radius: 8px;'>Order Cancelled ❌</div>";
+        } else {
+            progressHtml = "<table width='100%' border='0' cellspacing='0' cellpadding='0' style='margin: 30px 0;'>" +
+                "<tr>" +
+                "<td width='22%' align='center'><div style='background-color: #008296; color: #fff; width: 24px; height: 24px; border-radius: 12px; line-height: 24px; margin: 0 auto;'>✓</div></td>" +
+                "<td width='4%' style='background: " + cShipped + "; height: 3px;'></td>" +
+                "<td width='22%' align='center'><div style='background-color: " + cShipped + "; color: #fff; width: 24px; height: 24px; border-radius: 12px; line-height: 24px; margin: 0 auto;'>" + sShipped + "</div></td>" +
+                "<td width='4%' style='background: " + cOut + "; height: 3px;'></td>" +
+                "<td width='22%' align='center'><div style='background-color: " + cOut + "; color: #fff; width: 24px; height: 24px; border-radius: 12px; line-height: 24px; margin: 0 auto;'>" + sOut + "</div></td>" +
+                "<td width='4%' style='background: " + cDel + "; height: 3px;'></td>" +
+                "<td width='22%' align='center'><div style='background-color: " + cDel + "; color: #fff; width: 24px; height: 24px; border-radius: 12px; line-height: 24px; margin: 0 auto;'>" + sDel + "</div></td>" +
+                "</tr>" +
+                "<tr>" +
+                "<td width='22%' align='center' style='color: #008296; font-weight: bold; font-size: 14px; padding-top: 10px;'>Ordered</td>" +
+                "<td width='4%'></td>" +
+                "<td width='22%' align='center' style='" + tShipped + " font-size: 14px; padding-top: 10px;'>Shipped</td>" +
+                "<td width='4%'></td>" +
+                "<td width='22%' align='center' style='" + tOut + " font-size: 14px; padding-top: 10px;'>Out for delivery</td>" +
+                "<td width='4%'></td>" +
+                "<td width='22%' align='center' style='" + tDel + " font-size: 14px; padding-top: 10px;'>Delivered</td>" +
+                "</tr>" +
+                "</table>";
+        }
+
+        return "<html><body style='font-family: Arial, sans-serif; background-color: #f6f6f6; margin: 0; padding: 20px;'>" +
+            "<div style='max-width: 600px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);'>" +
+            "<div style='background-color: #232f3e; color: #fff; padding: 15px; text-align: center; border-radius: 8px 8px 0 0; font-size: 16px; font-weight: bold;'>" +
+            "<a href='http://localhost:5173/orders' style='color: #fff; text-decoration: none; margin: 0 15px;'>Your Orders</a>" +
+            "<a href='http://localhost:5173/profile' style='color: #fff; text-decoration: none; margin: 0 15px;'>Your Account</a>" +
+            "<a href='http://localhost:5173/' style='color: #fff; text-decoration: none; margin: 0 15px;'>Buy Again</a>" +
+            "</div>" +
+            "<h2 style='text-align: center; margin-top: 20px; color: " + titleColor + ";'>" + title + "</h2>" +
+            progressHtml +
+            "<div style='border-top: 1px solid #ddd; padding-top: 20px;'>" +
+            "<p style='margin: 5px 0;'><strong>Order # " + order.id + "</strong></p>" +
+            "<p style='margin: 5px 0; color: #555;'>" + order.address + "</p>" +
+            "<div style='margin-top: 15px;'>" +
+            "<a href='http://localhost:5173/orders' style='display: inline-block; background-color: #ffd814; color: #0f1111; text-decoration: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; font-size: 14px;'>View or edit order</a>" +
+            "</div>" +
+            "</div>" +
+            "<div style='display: flex; margin-top: 20px; padding: 20px; background-color: #f9f9f9; border-radius: 8px;'>" +
+            (productImgUrl != null && (productImgUrl.startsWith("http") || productImgUrl.startsWith("data:image")) ? 
+            "<img src='" + productImgUrl + "' style='width: 100px; height: 100px; object-fit: contain; background: #fff; padding: 5px; border: 1px solid #ddd; border-radius: 4px; margin-right: 20px;'/>" :
+            "<div style='width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: #fff; border: 1px solid #ddd; border-radius: 4px; margin-right: 20px; text-align: center;'>" + (productImgUrl != null && !productImgUrl.trim().isEmpty() ? productImgUrl : "📦") + "</div>") +
+            "<div>" +
+            "<p style='margin: 0 0 10px 0; font-size: 16px;'><a href='http://localhost:5173/product/" + order.product + "' style='color: #007185; text-decoration: none;'>" + productName + "</a></p>" +
+            "<p style='margin: 0; font-weight: bold; font-size: 18px;'>₹" + order.amount + "</p>" +
+            "<div style='margin-top: 10px;'><a href='http://localhost:5173/product/" + order.product + "' style='display: inline-block; background-color: #e3f2fd; color: #007185; text-decoration: none; padding: 6px 12px; border-radius: 16px; font-weight: bold; font-size: 12px;'>View item</a></div>" +
+            "</div>" +
+            "</div>" +
+            "<div style='border-top: 1px solid #ddd; margin-top: 20px; padding-top: 20px; text-align: right; font-size: 18px;'>" +
+            "<strong>Total: ₹" + order.amount + "</strong>" +
+            "</div>" +
+            "</div></body></html>";
     }
 }
 

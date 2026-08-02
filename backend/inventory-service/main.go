@@ -34,6 +34,6 @@ func main() {
 		}
 	})
 
-	log.Println("Inventory Service starting on port 8085...")
-	log.Fatal(http.ListenAndServe(":8085", nil))
+	log.Println("Inventory Service starting on port 8087...")
+	log.Fatal(http.ListenAndServe(":8087", nil))
 }

@@ -21,7 +21,7 @@ import string
 import os
 from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), '../../.env'))
-from email_utils import send_seller_pending_email
+from email_utils import send_seller_pending_email, send_seller_forgot_password_email, send_seller_password_changed_email
 
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -55,7 +55,7 @@ app.add_middleware(
 
 @app.middleware("http")
 async def auth_middleware(request: Request, call_next):
-    if request.method == "OPTIONS" or request.url.path in ["/health", "/api/sellers/login", "/api/sellers/register", "/api/sellers"]:
+    if request.method == "OPTIONS" or request.url.path in ["/health", "/api/sellers/login", "/api/sellers/register", "/api/sellers", "/api/sellers/forgot-password", "/api/sellers/reset-password"]:
         return await call_next(request)
     
     if request.url.path.endswith("/revenue"):
@@ -106,7 +106,8 @@ def startup_migrate():
         with db_cursor() as (cur, conn):
             cur.execute("""
                 ALTER TABLE sellers_schema.sellers
-                ADD COLUMN IF NOT EXISTS password VARCHAR(255) DEFAULT 'password'
+                ADD COLUMN IF NOT EXISTS password VARCHAR(255) DEFAULT 'password',
+                ADD COLUMN IF NOT EXISTS temp_password VARCHAR(255) DEFAULT NULL
             """)
             cur.execute("""
                 ALTER TABLE products_schema.products
@@ -154,6 +155,14 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email:    str
     password: str
+
+class ForgotPasswordRequest(BaseModel):
+    email: str
+
+class ResetPasswordRequest(BaseModel):
+    email: str
+    tempPassword: str
+    newPassword: str
 
 class StatusUpdate(BaseModel):
     Status: str
@@ -246,6 +255,59 @@ def login_seller(body: LoginRequest):
     del result["password"]     # never send password back
     token = create_access_token(data={"id": row["id"], "email": row["email"], "role": "SELLER"})
     return {"token": token, "user": result}
+
+@app.post("/api/sellers/forgot-password")
+def forgot_password(body: ForgotPasswordRequest):
+    with db_cursor() as (cur, conn):
+        cur.execute("SELECT id, owner, email FROM sellers_schema.sellers WHERE email = %s", (body.email,))
+        row = cur.fetchone()
+
+    if row is None:
+        raise HTTPException(404, "No account found with that email")
+
+    # Generate 8 char temp password
+    temp_password = secrets.token_hex(4)
+
+    with db_cursor() as (cur, conn):
+        cur.execute("""
+            UPDATE sellers_schema.sellers
+            SET temp_password = %s
+            WHERE email = %s
+        """, (temp_password, body.email))
+        conn.commit()
+
+    reset_link = "http://localhost:5174/reset-password"
+    send_seller_forgot_password_email(row["email"], row["owner"], temp_password, reset_link)
+    
+    return {"message": "Temporary password and reset link sent to your email."}
+
+@app.post("/api/sellers/reset-password")
+def reset_password(body: ResetPasswordRequest):
+    with db_cursor() as (cur, conn):
+        cur.execute("SELECT id, owner, email, temp_password FROM sellers_schema.sellers WHERE email = %s", (body.email,))
+        row = cur.fetchone()
+
+    if row is None:
+        raise HTTPException(404, "No account found with that email")
+
+    if not row["temp_password"] or row["temp_password"] != body.tempPassword:
+        raise HTTPException(401, "Incorrect or expired temporary password")
+
+    salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(body.newPassword.encode('utf-8'), salt).decode('utf-8')
+
+    with db_cursor() as (cur, conn):
+        cur.execute("""
+            UPDATE sellers_schema.sellers
+            SET password = %s, temp_password = NULL
+            WHERE email = %s
+        """, (hashed_password, body.email))
+        conn.commit()
+
+    login_link = "http://localhost:5174/login"
+    send_seller_password_changed_email(row["email"], row["owner"], login_link)
+
+    return {"message": "Password updated successfully"}
 
 
 @app.put("/api/sellers/{seller_id}/status")

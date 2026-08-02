@@ -26,6 +26,8 @@ public class Shipment {
     private Double amount;
     private String deliveryAddress;
     private String originAddress;
+    private String deliveryOtp;
+    private String customerEmail;
 
     public Shipment() {
     }
@@ -137,4 +139,10 @@ public class Shipment {
 
     public String getOriginAddress() { return originAddress; }
     public void setOriginAddress(String originAddress) { this.originAddress = originAddress; }
+
+    public String getDeliveryOtp() { return deliveryOtp; }
+    public void setDeliveryOtp(String deliveryOtp) { this.deliveryOtp = deliveryOtp; }
+
+    public String getCustomerEmail() { return customerEmail; }
+    public void setCustomerEmail(String customerEmail) { this.customerEmail = customerEmail; }
 }

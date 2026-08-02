@@ -27,6 +27,8 @@ def get_db_connection():
 class BroadcastReq(BaseModel):
     message: str
     recipient: str
+    subject: str = "NexusMart Order Update"
+    isHtml: bool = False
 
 @app.get("/api/notifications")
 def get_notifications():
@@ -73,14 +75,50 @@ SMTP_PORT = 465
 SMTP_USER = "arjunkumartata249@gmail.com"
 SMTP_PASS = os.environ.get("SMTP_PASSWORD", "")
 
-def send_email_async(to_email: str, subject: str, body: str):
+import re
+from email.mime.image import MIMEImage
+
+def send_email_async(to_email: str, subject: str, body: str, is_html: bool = False):
     def send():
         try:
-            msg = MIMEMultipart()
+            msg = MIMEMultipart('related') if is_html else MIMEMultipart()
             msg['From'] = f"NexusMart <{SMTP_USER}>"
             msg['To'] = to_email
             msg['Subject'] = subject
-            msg.attach(MIMEText(body, 'plain'))
+            
+            if is_html:
+                import uuid
+                import base64
+                
+                images_to_attach = []
+                def replacer(match):
+                    ext = match.group(1)
+                    b64_data = match.group(2)
+                    cid = f"image_{uuid.uuid4().hex}@{ext}"
+                    images_to_attach.append((cid, b64_data, ext))
+                    return f"src='cid:{cid}'"
+
+                # Match both single and double quotes for src
+                pattern = r"src=['\"]data:image/([a-zA-Z0-9]+);base64,([^'\"]+)['\"]"
+                new_body = re.sub(pattern, replacer, body)
+                
+                # Use alternative multipart for html to support both text and images properly
+                msg_alt = MIMEMultipart('alternative')
+                msg.attach(msg_alt)
+                msg_alt.attach(MIMEText(new_body, 'html'))
+                
+                for cid, b64_data, ext in images_to_attach:
+                    try:
+                        img_data = base64.b64decode(b64_data)
+                        img_mime = MIMEImage(img_data, _subtype=ext)
+                        img_mime.add_header('Content-ID', f'<{cid}>')
+                        img_mime.add_header('Content-Disposition', 'inline')
+                        msg.attach(img_mime)
+                    except Exception as img_e:
+                        print(f"Failed to attach image: {img_e}")
+            else:
+                msg.attach(MIMEText(body, 'plain'))
+
             server = smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, timeout=3)
             server.login(SMTP_USER, SMTP_PASS)
             server.send_message(msg)
@@ -93,8 +131,7 @@ def send_email_async(to_email: str, subject: str, body: str):
 def send_email(req: BroadcastReq):
     try:
         # Send real email async
-        subject = "NexusMart Order Update"
-        send_email_async(req.recipient, subject, req.message)
+        send_email_async(req.recipient, req.subject, req.message, req.isHtml)
         
         # Also store it in DB
         conn = get_db_connection()

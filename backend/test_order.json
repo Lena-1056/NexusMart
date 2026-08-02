@@ -1,0 +1,10 @@
+{
+  "customer": "test@example.com",
+  "seller": "test_seller",
+  "product": "p1",
+  "amount": "100",
+  "payment": "PENDING",
+  "paymentMethod": "RAZORPAY",
+  "address": "test address",
+  "customerCity": "Mumbai"
+}
