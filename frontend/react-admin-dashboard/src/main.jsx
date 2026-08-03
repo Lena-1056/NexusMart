@@ -6,7 +6,7 @@ import App from './App.jsx'
 const originalFetch = window.fetch;
 window.fetch = async (...args) => {
   let [resource, config] = args;
-  if (typeof resource === 'string' && resource.includes(':8084/')) {
+  if (typeof resource === 'string' && resource.startsWith('/api/') && !resource.includes('/api/auth/login')) {
     const token = localStorage.getItem('adminToken');
     if (token) {
       config = config || {};

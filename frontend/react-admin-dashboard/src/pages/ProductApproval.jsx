@@ -102,7 +102,7 @@ export default function ProductApproval() {
   const load = useCallback(() => {
     setLoading(true)
     const token = localStorage.getItem('adminToken')
-    fetch('http://localhost:8084/api/products', {
+    fetch('/api/products', {
       headers: { 'Authorization': `Bearer ${token}` }
     })
       .then(r => r.json())
@@ -119,7 +119,7 @@ export default function ProductApproval() {
     setSelected(null)                                               // close modal now
     setProducts(p => p.map(x => x.id === id ? { ...x, status } : x)) // optimistic
     const token = localStorage.getItem('adminToken')
-    fetch(`http://localhost:8084/api/products/${id}/status`, {
+    fetch(`/api/products/${id}/status`, {
       method: 'PUT',
       headers: { 
         'Content-Type': 'application/json',

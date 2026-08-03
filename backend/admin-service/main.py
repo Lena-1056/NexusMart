@@ -127,7 +127,7 @@ def health():
 @app.get("/api/admin/dashboard")
 def dashboard_stats():
     with db() as (cur, conn):
-        cur.execute("SELECT COUNT(*) as cnt FROM users_schema.users")
+        cur.execute("SELECT COUNT(*) as cnt FROM users_schema.users WHERE role='CUSTOMER'")
         users = cur.fetchone()["cnt"]
 
         cur.execute("SELECT COUNT(*) as cnt, COALESCE(SUM(amount),0) as rev FROM orders_schema.orders")
@@ -183,7 +183,7 @@ def analytics():
 @app.get("/api/users")
 def list_users():
     with db() as (cur, conn):
-        cur.execute("SELECT id, name, email, role, status, joined, orders FROM users_schema.users ORDER BY name")
+        cur.execute("SELECT id, name, email, role, status, joined, orders FROM users_schema.users WHERE role='CUSTOMER' ORDER BY name")
         return jrows(cur.fetchall())
 
 @app.put("/api/users/{user_id}/status")

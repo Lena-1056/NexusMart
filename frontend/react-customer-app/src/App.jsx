@@ -59,7 +59,7 @@ function Layout({ customer, handleLogout, deliveryLocation, setDeliveryLocation,
       <div className={`drawer-container ${isDrawerOpen ? 'open' : ''}`}>
         <div className="drawer-header">
           <div className="drawer-header-avatar">
-            {customer ? customer.name[0].toUpperCase() : '👤'}
+            {customer && customer.name ? customer.name[0].toUpperCase() : '👤'}
           </div>
           <span>Hello, {customer ? customer.name : 'Sign in'}</span>
         </div>
@@ -249,9 +249,14 @@ export default function App() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
 
   useEffect(() => {
-    const c = getCustomer()
-    if (c) setCustomer(c)
-    setLoading(false)
+    try {
+      const c = getCustomer()
+      if (c) setCustomer(c)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoading(false)
+    }
   }, [])
 
   useEffect(() => {

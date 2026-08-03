@@ -19,12 +19,12 @@ export default function Dashboard() {
   const [orders, setOrders] = useState([])
 
   useEffect(() => {
-    fetch('http://localhost:8084/api/admin/dashboard')
+    fetch('/api/admin/dashboard')
       .then(r => r.json())
       .then(data => setStats(data))
       .catch(e => console.error(e))
 
-    fetch('http://localhost:8084/api/orders')
+    fetch('/api/orders')
       .then(r => r.json())
       .then(data => setOrders(data.slice(0, 5)))
       .catch(e => console.error(e))

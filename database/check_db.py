@@ -1,0 +1,13 @@
+import psycopg2
+conn=psycopg2.connect('dbname=ecommerce user=postgres password=1234567890 host=127.0.0.1')
+cur=conn.cursor()
+cur.execute("SELECT count(*) FROM users_schema.users")
+print('Users:', cur.fetchone()[0])
+cur.execute("SELECT count(*) FROM sellers_schema.sellers")
+print('Sellers:', cur.fetchone()[0])
+cur.execute("SELECT count(*) FROM products_schema.products")
+print('Products:', cur.fetchone()[0])
+cur.execute("SELECT count(*) FROM orders_schema.orders")
+print('Orders:', cur.fetchone()[0])
+cur.close()
+conn.close()

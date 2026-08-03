@@ -7,7 +7,7 @@ export default function UserManagement() {
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken')
-    fetch('http://localhost:8084/api/users', {
+    fetch('/api/users', {
       headers: { 'Authorization': `Bearer ${token}` }
     })
       .then(r => r.json())
@@ -24,7 +24,7 @@ export default function UserManagement() {
     const user = users.find(u => u.id === id)
     const newStatus = user.status === 'ACTIVE' ? 'SUSPENDED' : 'ACTIVE'
     const token = localStorage.getItem('adminToken')
-    fetch(`http://localhost:8084/api/users/${id}/status`, {
+    fetch(`/api/users/${id}/status`, {
       method: 'PUT',
       headers: { 
         'Content-Type': 'application/json',
@@ -39,7 +39,7 @@ export default function UserManagement() {
   const del = (id) => {
     if (confirm('Delete this user?')) {
       const token = localStorage.getItem('adminToken')
-      fetch(`http://localhost:8084/api/users/${id}`, { 
+      fetch(`/api/users/${id}`, { 
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       })

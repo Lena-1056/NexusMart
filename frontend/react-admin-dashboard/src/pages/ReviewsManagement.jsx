@@ -8,14 +8,14 @@ export default function ReviewsManagement() {
   const [filter, setFilter]   = useState('ALL')
 
   useEffect(() => {
-    fetch('http://localhost:8084/api/reviews')
+    fetch('/api/reviews')
       .then(r => r.json())
       .then(data => setReviews(data))
       .catch(e => console.error(e))
   }, [])
 
   const approve = (id) => {
-    fetch(`http://localhost:8084/api/reviews/${id}/status`, {
+    fetch(`/api/reviews/${id}/status`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: 'APPROVED' })
@@ -24,13 +24,13 @@ export default function ReviewsManagement() {
 
   const del = (id) => {
     if(confirm('Delete this review completely?')) {
-      fetch(`http://localhost:8084/api/reviews/${id}`, { method: 'DELETE' })
+      fetch(`/api/reviews/${id}`, { method: 'DELETE' })
         .then(() => setReviews(p => p.filter(r => r.id!==id)))
     }
   }
 
   const flag = (id) => {
-    fetch(`http://localhost:8084/api/reviews/${id}/flag`, { method: 'PUT' })
+    fetch(`/api/reviews/${id}/flag`, { method: 'PUT' })
       .then(() => setReviews(p => p.map(r => r.id===id ? {...r, flagged:!r.flagged} : r)))
   }
 

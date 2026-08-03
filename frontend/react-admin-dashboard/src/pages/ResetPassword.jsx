@@ -30,14 +30,14 @@ export default function ResetPassword() {
     setLoading(true)
 
     try {
-      const response = await fetch('http://127.0.0.1:8085/api/auth/verify-otp', {
+      const response = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp })
       })
 
       const data = await response.json()
-      if (!response.ok) throw new Error(data.error || data.message || 'OTP Verification failed')
+      if (!response.ok || data.error) throw new Error(data.error || data.message || 'OTP Verification failed')
       
       setStep('RESET')
     } catch (err) {
@@ -53,14 +53,14 @@ export default function ResetPassword() {
     setLoading(true)
 
     try {
-      const response = await fetch('http://127.0.0.1:8085/api/auth/reset-password', {
+      const response = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp, newPassword })
       })
 
       const data = await response.json()
-      if (!response.ok) throw new Error(data.error || data.message || 'Password reset failed')
+      if (!response.ok || data.error) throw new Error(data.error || data.message || 'Password reset failed')
       
       setMessage('Password reset successfully. Redirecting to login...')
       setTimeout(() => {

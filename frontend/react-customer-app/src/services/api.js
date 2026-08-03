@@ -15,8 +15,13 @@ export const getAuthHeaders = () => {
 }
 
 export const getCustomer = () => {
-  const c = localStorage.getItem('customerAuth')
-  return c ? JSON.parse(c) : null
+  try {
+    const c = localStorage.getItem('customerAuth')
+    return c && c !== 'undefined' ? JSON.parse(c) : null
+  } catch (e) {
+    console.error("Error parsing customer from localStorage:", e);
+    return null;
+  }
 }
 
 export const setCustomer = (data) => {

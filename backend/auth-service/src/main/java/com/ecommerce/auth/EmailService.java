@@ -55,6 +55,46 @@ public class EmailService {
         });
     }
 
+    public void sendPasswordResetEmail(String toEmail, String name, String otp) {
+        CompletableFuture.runAsync(() -> {
+            try {
+                MimeMessage msg = mailSender.createMimeMessage();
+                MimeMessageHelper helper = new MimeMessageHelper(msg, true, "UTF-8");
+                helper.setFrom(fromEmail, fromName);
+                helper.setTo(toEmail);
+                helper.setSubject("Password Reset OTP - NexusMart");
+                
+                String resetLink = "http://localhost:5175/reset-password?email=" + toEmail;
+                String htmlContent = "<div style=\"font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; background-color: #f9f9f9; border-radius: 12px; border: 1px solid #eaeaea;\">"
+                        + "<div style=\"text-align: center; margin-bottom: 25px;\">"
+                        + "<h1 style=\"color: #2563eb; margin: 0; font-size: 28px;\">NexusMart</h1>"
+                        + "</div>"
+                        + "<div style=\"background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);\">"
+                        + "<h2 style=\"color: #1f2937; font-size: 20px; margin-top: 0;\">Password Reset Request</h2>"
+                        + "<p style=\"color: #4b5563; font-size: 16px; line-height: 1.5;\">Hi <b>" + name + "</b>,</p>"
+                        + "<p style=\"color: #4b5563; font-size: 16px; line-height: 1.5;\">We received a request to reset the password for your NexusMart Admin account. Use the OTP below to complete the process:</p>"
+                        + "<div style=\"background-color: #f3f4f6; border-left: 4px solid #2563eb; padding: 15px; margin: 25px 0; text-align: center; border-radius: 4px;\">"
+                        + "<span style=\"font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #1e40af;\">" + otp + "</span>"
+                        + "</div>"
+                        + "<p style=\"color: #ef4444; font-size: 14px; margin-bottom: 30px;\"><i>This OTP is valid for exactly 15 minutes.</i></p>"
+                        + "<div style=\"text-align: center;\">"
+                        + "<a href=\"" + resetLink + "\" style=\"display: inline-block; background-color: #2563eb; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;\">Go to Reset Page</a>"
+                        + "</div>"
+                        + "</div>"
+                        + "<div style=\"text-align: center; margin-top: 25px; color: #9ca3af; font-size: 13px;\">"
+                        + "<p>If you didn't request this, you can safely ignore this email.</p>"
+                        + "<p>&copy; 2026 NexusMart. All rights reserved.</p>"
+                        + "</div>"
+                        + "</div>";
+                        
+                helper.setText(htmlContent, true);
+                mailSender.send(msg);
+            } catch (Exception e) {
+                System.err.println("[EmailService] Failed to send OTP email: " + e.getMessage());
+            }
+        });
+    }
+
     private String buildRegistrationHtml(String name) {
         return """
             <!DOCTYPE html>

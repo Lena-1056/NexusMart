@@ -8,7 +8,7 @@ export default function Notifications() {
   const [recipient, setRecipient] = useState('ALL')
 
   useEffect(() => {
-    fetch('http://localhost:8084/api/notifications')
+    fetch('/api/notifications')
       .then(r => r.json())
       .then(data => setNotifs(data))
       .catch(e => console.error(e))
@@ -17,24 +17,24 @@ export default function Notifications() {
   const unread = notifs.filter(n => !n.read).length
 
   const markRead = (id) => {
-    fetch(`http://localhost:8084/api/notifications/${id}/read`, { method: 'PUT' })
+    fetch(`/api/notifications/${id}/read`, { method: 'PUT' })
       .then(() => setNotifs(p => p.map(n => n.id === id ? { ...n, read: true } : n)))
   }
   
   const markAllRead = () => {
     const unread = notifs.filter(n => !n.read)
-    Promise.all(unread.map(n => fetch(`http://localhost:8084/api/notifications/${n.id}/read`, { method: 'PUT' })))
+    Promise.all(unread.map(n => fetch(`/api/notifications/${n.id}/read`, { method: 'PUT' })))
       .then(() => setNotifs(p => p.map(n => ({ ...n, read: true }))))
   }
   
   const del = (id) => {
-    fetch(`http://localhost:8084/api/notifications/${id}`, { method: 'DELETE' })
+    fetch(`/api/notifications/${id}`, { method: 'DELETE' })
       .then(() => setNotifs(p => p.filter(n => n.id !== id)))
   }
 
   const send = () => {
     if (!msg.trim()) return
-    fetch('http://localhost:8084/api/notifications/broadcast', {
+    fetch('/api/notifications/broadcast', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: msg, recipient: recipient })

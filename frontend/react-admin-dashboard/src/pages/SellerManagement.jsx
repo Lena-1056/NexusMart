@@ -21,7 +21,7 @@ export default function SellerManagement() {
   const load = useCallback((silent = false) => {
     if (!silent) setLoading(true)
     const token = localStorage.getItem('adminToken')
-    fetch('http://localhost:8084/api/sellers', {
+    fetch('/api/sellers', {
       headers: { 'Authorization': `Bearer ${token}` }
     })
       .then(r => r.json())
@@ -44,7 +44,7 @@ export default function SellerManagement() {
   const update = (id, status) => {
     setSelected(null)
     setSellers(p => p.map(s => s.id === id ? { ...s, status } : s))
-    fetch(`http://localhost:8084/api/sellers/${id}/status`, {
+    fetch(`/api/sellers/${id}/status`, {
       method: 'PUT',
       headers: { 
         'Content-Type': 'application/json',

@@ -14,12 +14,12 @@ export default function Analytics() {
   })
 
   useEffect(() => {
-    fetch('http://localhost:8084/api/admin/dashboard')
+    fetch('/api/admin/dashboard')
       .then(r => r.json())
       .then(data => setStats(data))
       .catch(e => console.error(e))
 
-    fetch('http://localhost:8084/api/admin/analytics')
+    fetch('/api/admin/analytics')
       .then(r => r.json())
       .then(data => setAnalytics(data))
       .catch(e => console.error(e))

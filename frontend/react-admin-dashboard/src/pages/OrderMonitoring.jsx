@@ -13,14 +13,14 @@ export default function OrderMonitoring() {
   const [selectedOrder, setSelectedOrder] = useState(null)
 
   useEffect(() => {
-    fetch('http://localhost:8084/api/orders')
+    fetch('/api/orders')
       .then(r => r.json())
       .then(data => setOrders(data))
       .catch(e => console.error(e))
   }, [])
 
   const updateStatus = (id, status) => {
-    fetch(`http://localhost:8084/api/orders/${id}/status`, {
+    fetch(`/api/orders/${id}/status`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status })

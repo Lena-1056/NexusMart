@@ -111,7 +111,9 @@ public class AuthApplication implements CommandLineRunner {
             "ALTER TABLE users_schema.addresses ADD COLUMN IF NOT EXISTS country VARCHAR(100)",
             "ALTER TABLE users_schema.addresses ADD COLUMN IF NOT EXISTS is_default BOOLEAN DEFAULT false",
             "ALTER TABLE users_schema.addresses ADD COLUMN IF NOT EXISTS address_type VARCHAR(50)",
-            "ALTER TABLE users_schema.addresses ADD COLUMN IF NOT EXISTS delivery_instructions VARCHAR(1000)"
+            "ALTER TABLE users_schema.addresses ADD COLUMN IF NOT EXISTS delivery_instructions VARCHAR(1000)",
+            "ALTER TABLE users_schema.users ADD COLUMN IF NOT EXISTS otp_code VARCHAR(10)",
+            "ALTER TABLE users_schema.users ADD COLUMN IF NOT EXISTS otp_expiry TIMESTAMP"
         };
         for (String sql : alterStatements) {
             try {
@@ -149,6 +151,86 @@ public class AuthApplication implements CommandLineRunner {
         user.put("role", "CUSTOMER");
         user.put("status", "ACTIVE");
         return user;
+    }
+
+    @PostMapping("/api/auth/forgot-password")
+    public Map<String, Object> forgotPassword(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        try {
+            Map<String, Object> user = jdbcTemplate.queryForMap("SELECT * FROM users_schema.users WHERE email = ?", email);
+            
+            // Generate 6-digit OTP
+            String otp = String.format("%06d", new java.util.Random().nextInt(999999));
+            jdbcTemplate.update("UPDATE users_schema.users SET otp_code = ?, otp_expiry = NOW() + INTERVAL '15 minutes' WHERE email = ?", otp, email);
+            
+            emailService.sendPasswordResetEmail(email, (String) user.get("name"), otp);
+            
+            return Map.of("status", "success", "message", "OTP sent to your email address.");
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "No account found with that email");
+            return error;
+        }
+    }
+
+    @PostMapping("/api/auth/verify-otp")
+    public Map<String, Object> verifyOtp(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String otp = request.get("otp");
+        try {
+            Map<String, Object> user = jdbcTemplate.queryForMap("SELECT * FROM users_schema.users WHERE email = ? AND otp_code = ? AND otp_expiry > NOW()", email, otp);
+            return Map.of("status", "success", "message", "OTP verified");
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Invalid or expired OTP");
+            return error;
+        }
+    }
+
+    @PostMapping("/api/auth/reset-password")
+    public Map<String, Object> resetPassword(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String otp = request.get("otp");
+        String newPassword = request.get("newPassword");
+        try {
+            Map<String, Object> user = jdbcTemplate.queryForMap("SELECT * FROM users_schema.users WHERE email = ? AND otp_code = ? AND otp_expiry > NOW()", email, otp);
+            
+            String hashedPassword = BCrypt.hashpw(newPassword, BCrypt.gensalt());
+            jdbcTemplate.update("UPDATE users_schema.users SET password = ?, otp_code = NULL, otp_expiry = NULL WHERE email = ?", hashedPassword, email);
+            
+            return Map.of("status", "success", "message", "Password reset successfully");
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Invalid or expired OTP");
+            return error;
+        }
+    }
+
+    @PostMapping("/api/auth/login")
+    public Map<String, Object> adminLogin(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        String password = request.get("password");
+
+        try {
+            Map<String, Object> user = jdbcTemplate.queryForMap("SELECT * FROM users_schema.users WHERE email = ? AND role = 'ADMIN'", email);
+            String dbPassword = (String) user.get("password");
+            
+            if (dbPassword != null && BCrypt.checkpw(password, dbPassword)) {
+                String token = generateToken((String) user.get("id"), email, "ADMIN");
+                Map<String, Object> response = new HashMap<>(user);
+                response.put("token", token);
+                response.remove("password");
+                return response;
+            } else {
+                Map<String, Object> error = new HashMap<>();
+                error.put("error", "Invalid credentials");
+                return error;
+            }
+        } catch (Exception e) {
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Invalid credentials");
+            return error;
+        }
     }
 
     @PostMapping("/api/auth/customer/login")

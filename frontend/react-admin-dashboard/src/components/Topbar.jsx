@@ -12,7 +12,7 @@ export default function Topbar({ onLogout }) {
 
   // Fetch notifications on mount
   useEffect(() => {
-    fetch('http://localhost:8084/api/notifications')
+    fetch('/api/notifications')
       .then(r => r.json())
       .then(data => setNotifs(data))
       .catch(e => console.error(e))
@@ -34,13 +34,13 @@ export default function Topbar({ onLogout }) {
   const unreadCount = notifs.filter(n => !n.read).length
 
   const markRead = (id) => {
-    fetch(`http://localhost:8084/api/notifications/${id}/read`, { method: 'PUT' })
+    fetch(`/api/notifications/${id}/read`, { method: 'PUT' })
       .then(() => setNotifs(prev => prev.map(n => n.id === id ? { ...n, read: true } : n)))
   }
 
   const markAllRead = () => {
     const unread = notifs.filter(n => !n.read)
-    Promise.all(unread.map(n => fetch(`http://localhost:8084/api/notifications/${n.id}/read`, { method: 'PUT' })))
+    Promise.all(unread.map(n => fetch(`/api/notifications/${n.id}/read`, { method: 'PUT' })))
       .then(() => setNotifs(prev => prev.map(n => ({ ...n, read: true }))))
   }
 
