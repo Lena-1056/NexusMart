@@ -160,6 +160,6 @@ func main() {
 		}
 	})
 
-	fmt.Println("Product Service running on port 8088...")
-	log.Fatal(http.ListenAndServe(":8088", nil))
+	fmt.Println("Product Service running on port 8085...")
+	log.Fatal(http.ListenAndServe(":8085", nil))
 }

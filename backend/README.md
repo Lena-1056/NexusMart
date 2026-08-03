@@ -1,6 +1,6 @@
 # NexusMart Backend Microservices Architecture
 
-This directory contains the core microservices that power the NexusMart E-Commerce platform. The backend is built using a polyglot architecture, combining the robust enterprise features of **Java Spring Boot** with the lightweight and fast development capabilities of **Python FastAPI**.
+This directory contains the core microservices that power the NexusMart E-Commerce platform. The backend is built using a polyglot architecture, combining the robust enterprise features of **Java Spring Boot**, the lightweight and fast development capabilities of **Python FastAPI**, and the high-performance execution of **Go (Golang)**.
 
 All services share a single PostgreSQL database instance but manage their own isolated schemas to enforce microservice data boundaries.
 
@@ -11,6 +11,9 @@ These services handle heavy transactional logic and secure data management.
 1. **auth-service (Port 8081)**: Manages customer authentication, JWT generation, and user registration.
 2. **cart-service (Port 8086)**: Handles the customer's shopping cart state.
 3. **order-service (Port 8083)**: Manages order placement, processing, and history.
+4. **shipping-service**: Manages shipping and delivery status updates.
+5. **payment-service**: Handles transaction processing and checkout.
+6. **inventory-service (Port 8098)**: Manages product stock and inventory tracking.
 
 ### Python FastAPI Services
 These services handle rapid data retrieval, searches, and CRUD operations.
@@ -21,6 +24,11 @@ These services handle rapid data retrieval, searches, and CRUD operations.
 8. **review-service (Port 8089)**: Handles product ratings and customer reviews.
 9. **notification-service (Port 8091)**: Handles system alerts and notifications.
 
+### Go (Golang) Services
+These services provide high-concurrency API routing and core catalog operations.
+10. **api-gateway (Port 8080)**: Central entry point routing frontend requests to the appropriate backend microservices.
+11. **product-service (Port 8085)**: Manages the product catalog.
+
 ---
 
 ## Prerequisites
@@ -28,15 +36,30 @@ These services handle rapid data retrieval, searches, and CRUD operations.
 - **Java 17+** (for Spring Boot services)
 - **Maven** (for building Java services)
 - **Python 3.9+** (for FastAPI services)
+- **Go 1.20+** (for Golang services)
 - **PostgreSQL 14+** (Running on `localhost:5432`)
 
 ## Installation & Setup
+
+### Environment Variables (.env)
+**CRITICAL**: You must create a `.env` file in the root `NexusMart` directory before starting the backend. This file is ignored by Git to protect secrets.
+Required variables:
+- `DB_PASSWORD`: Your PostgreSQL password
+- `JWT_SECRET_KEY`: Secret for JWT token generation
+- `SMTP_PASSWORD`: Password for email notifications
+
+### Automated Startup
+The easiest way to start or stop all backend microservices at once is by running the PowerShell scripts located in the root directory:
+```powershell
+.\start_all.ps1
+.\stop_all.ps1
+```
 
 ### Database Setup
 The database requires an `ecommerce` database running on `localhost:5432` with the credentials `postgres` / `1234567890`.
 You can initialize the tables using the `database/init.sql` script.
 
-### Running Python Services (FastAPI)
+### Running Python Services Manually (FastAPI)
 Navigate to any Python service directory (e.g., `search-service`) and run:
 ```bash
 # Install required pip packages
@@ -47,11 +70,17 @@ python -m uvicorn main:app --host 0.0.0.0 --port <PORT> --reload
 ```
 *(Replace `<PORT>` with the specific port for that service listed above)*
 
-### Running Java Services (Spring Boot)
+### Running Java Services Manually (Spring Boot)
 Navigate to any Java service directory (e.g., `auth-service`) and run:
 ```bash
 # Using Maven wrapper (if available) or standard maven
 mvn spring-boot:run
+```
+
+### Running Go Services Manually
+Navigate to any Go service directory (e.g., `api-gateway`) and run:
+```bash
+go run main.go
 ```
 
 ## Structure Details

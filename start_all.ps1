@@ -7,12 +7,15 @@ start-process mvn -ArgumentList "spring-boot:run" -WorkingDirectory "F:\ECommerc
 start-process mvn -ArgumentList "spring-boot:run" -WorkingDirectory "F:\ECommerce\backend\cart-service" -WindowStyle Hidden
 start-process mvn -ArgumentList "spring-boot:run" -WorkingDirectory "F:\ECommerce\backend\shipping-service" -WindowStyle Hidden
 start-process mvn -ArgumentList "spring-boot:run" -WorkingDirectory "F:\ECommerce\backend\auth-service" -WindowStyle Hidden
-start-process mvn -ArgumentList "spring-boot:run" -WorkingDirectory "F:\ECommerce\backend\inventory-service" -WindowStyle Hidden
+#start-process mvn -ArgumentList "spring-boot:run" -WorkingDirectory "F:\ECommerce\backend\inventory-service" -WindowStyle Hidden
+start-process mvn -ArgumentList "spring-boot:run" -WorkingDirectory "$PSScriptRoot\backend\inventory-service" -WindowStyle Hidden
 start-process mvn -ArgumentList "spring-boot:run" -WorkingDirectory "F:\ECommerce\backend\user-service" -WindowStyle Hidden
 
 # Go services
-start-process go -ArgumentList "run main.go" -WorkingDirectory "F:\ECommerce\backend\product-service" -WindowStyle Hidden
-start-process go -ArgumentList "run main.go" -WorkingDirectory "F:\ECommerce\backend\api-gateway" -WindowStyle Hidden
+#start-process go -ArgumentList "run main.go" -WorkingDirectory "F:\ECommerce\backend\product-service" -WindowStyle Hidden
+#start-process go -ArgumentList "run main.go" -WorkingDirectory "F:\ECommerce\backend\api-gateway" -WindowStyle Hidden
+start-process go -ArgumentList "run main.go" -WorkingDirectory "$PSScriptRoot\backend\product-service" -WindowStyle Hidden
+start-process go -ArgumentList "run main.go" -WorkingDirectory "$PSScriptRoot\backend\api-gateway" -WindowStyle Hidden
 
 # Python services
 start-process python -ArgumentList "main.py" -WorkingDirectory "F:\ECommerce\backend\seller-service" -WindowStyle Hidden
