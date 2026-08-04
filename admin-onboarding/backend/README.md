@@ -18,7 +18,8 @@ This is a standalone Spring Boot microservice dedicated exclusively to the Admin
 - **repository/**: Spring Data or JDBC configurations.
 
 ## How to Run
-Run the application using the Spring Boot Maven plugin:
+1. Enter your PostgreSQL password, Gmail address, and SMTP app password in the configuration before starting the service.
+2. Run the application using the Spring Boot Maven plugin:
 ```bash
 mvn spring-boot:run
 ```
