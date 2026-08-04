@@ -314,13 +314,31 @@ public class ShippingController {
         return ResponseEntity.ok(Map.of("message", "Webhook processed successfully"));
     }
 
+//    @PostMapping("/couriers/register")
+//    public ResponseEntity<?> registerCourier(@RequestBody Map<String, String> request) {
+//        Courier courier = new Courier(
+//            request.get("name"),
+//            request.get("email"),
+//            request.get("password"),
+//            request.get("location")
+//        );
+//        courierRepository.save(courier);
+//        return ResponseEntity.ok(courier);
+//    }
+
     @PostMapping("/couriers/register")
     public ResponseEntity<?> registerCourier(@RequestBody Map<String, String> request) {
+        // 1. Check if email already exists!
+        if (courierRepository.findByEmail(request.get("email")).isPresent()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Email already registered!"));
+        }
+
+        // 2. Save if unique
         Courier courier = new Courier(
-            request.get("name"),
-            request.get("email"),
-            request.get("password"),
-            request.get("location")
+                request.get("name"),
+                request.get("email"),
+                request.get("password"),
+                request.get("location")
         );
         courierRepository.save(courier);
         return ResponseEntity.ok(courier);

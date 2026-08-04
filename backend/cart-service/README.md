@@ -12,8 +12,9 @@ This service connects to the `ecommerce` PostgreSQL database and manages data wi
 
 ## Installation & Running
 1. Ensure PostgreSQL is running.
-2. Run `mvn clean install` to download dependencies.
-3. Start the application using:
+2. Enter your PostgreSQL database password in the configuration file before starting the service.
+3. Run `mvn clean install` to download dependencies.
+4. Start the application using:
 ```bash
 mvn spring-boot:run
 ```

@@ -32,7 +32,7 @@ import bcrypt
 import jwt
 from datetime import datetime, timedelta
 
-SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "")
+SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "Enter your JWT token")
 ALGORITHM = "HS256"
 
 def create_access_token(data: dict):
@@ -79,7 +79,7 @@ DB_CONFIG = {
     "port":     5432,
     "dbname":   "ecommerce",
     "user":     "postgres",
-    "password": os.environ.get("DB_PASSWORD", ""),
+    "password": os.environ.get("DB_PASSWORD", "Enter your PostgreSQL password"),
 }
 
 def get_conn():

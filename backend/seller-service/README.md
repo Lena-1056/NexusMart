@@ -12,11 +12,12 @@ This service connects to the `ecommerce` PostgreSQL database and primarily inter
 
 ## Installation & Running
 1. Ensure you have Python installed.
-2. Install the required dependencies:
+2. Enter your PostgreSQL password and JWT token in `main.py` before starting the service.
+3. Install the required dependencies:
 ```bash
 pip install fastapi uvicorn psycopg2-binary pydantic
 ```
-3. Start the application using:
+4. Start the application using:
 ```bash
 python -m uvicorn main:app --host 0.0.0.0 --port 8090 --reload
 ```

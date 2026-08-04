@@ -13,21 +13,21 @@ These services handle heavy transactional logic and secure data management.
 3. **order-service (Port 8083)**: Manages order placement, processing, and history.
 4. **shipping-service**: Manages shipping and delivery status updates.
 5. **payment-service**: Handles transaction processing and checkout.
-6. **inventory-service (Port 8098)**: Manages product stock and inventory tracking.
 
 ### Python FastAPI Services
 These services handle rapid data retrieval, searches, and CRUD operations.
-4. **admin-service (Port 8084)**: Admin operations, product catalog management, and approvals.
-5. **seller-service (Port 8090)**: Seller dashboard metrics, product uploads, and store management.
-6. **search-service (Port 8087)**: Powers the customer-facing product search functionality.
-7. **wishlist-service (Port 8088)**: Manages customer wishlists and saved items.
-8. **review-service (Port 8089)**: Handles product ratings and customer reviews.
-9. **notification-service (Port 8091)**: Handles system alerts and notifications.
+6. **inventory-service (Port 8098)**: Manages product stock and inventory tracking.
+7. **admin-service (Port 8084)**: Admin operations, product catalog management, and approvals.
+8. **seller-service (Port 8090)**: Seller dashboard metrics, product uploads, and store management.
+9. **search-service (Port 8087)**: Powers the customer-facing product search functionality.
+10. **wishlist-service (Port 8088)**: Manages customer wishlists and saved items.
+11. **review-service (Port 8089)**: Handles product ratings and customer reviews.
+12. **notification-service (Port 8091)**: Handles system alerts and notifications.
 
 ### Go (Golang) Services
 These services provide high-concurrency API routing and core catalog operations.
-10. **api-gateway (Port 8080)**: Central entry point routing frontend requests to the appropriate backend microservices.
-11. **product-service (Port 8085)**: Manages the product catalog.
+13. **api-gateway (Port 8080)**: Central entry point routing frontend requests to the appropriate backend microservices.
+14. **product-service (Port 8085)**: Manages the product catalog.
 
 ---
 
