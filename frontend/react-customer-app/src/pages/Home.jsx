@@ -10,7 +10,17 @@ export default function Home({ customer }) {
   const { formatCurrency } = useCurrency()
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [wishlistItems, setWishlistItems] = useState([])
   const location = useLocation()
+  
+  useEffect(() => {
+    if (customer?.email) {
+      fetch(`${SERVICES.WISHLIST}/wishlist/${customer.email}`)
+        .then(res => res.json())
+        .then(data => setWishlistItems(data))
+        .catch(console.error)
+    }
+  }, [customer])
   
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search)
@@ -45,6 +55,29 @@ export default function Home({ customer }) {
   const brandsParam = searchParams.get('brands') || ''
   const selectedBrands = brandsParam ? brandsParam.split(',') : []
   
+  const toggleWishlist = async (e, productId) => {
+    e.preventDefault()
+    if (!customer?.email) {
+      alert("Please login to add items to your wishlist.")
+      return
+    }
+    try {
+      const res = await fetch(`${SERVICES.WISHLIST}/wishlist/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: customer.email, productId })
+      })
+      const data = await res.json()
+      if (data.status === 'added') {
+        setWishlistItems(prev => [...prev, productId])
+      } else if (data.status === 'removed') {
+        setWishlistItems(prev => prev.filter(id => id !== productId))
+      }
+    } catch(err) {
+      console.error(err)
+    }
+  }
+
   const isSearchOrCategory = q || cat || subCatParam || priceParam || brandsParam
 
   if (loading) {
@@ -57,15 +90,29 @@ export default function Home({ customer }) {
 
   const renderProductCard = (p) => {
     const cover = p.emoji?.startsWith('data:image') ? p.emoji.split('||')[0] : null
+    const outOfStock = p.stock <= 0
     return (
       <Link to={`/product/${p.id}`} key={p.id} className="amz-search-card" style={{ textDecoration: 'none', color: 'inherit', background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column', transition: '0.3s', boxShadow: '0 10px 20px rgba(0,0,0,0.2)' }} onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'} onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
-        <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', marginBottom: '16px', overflow: 'hidden' }}>
+        <div style={{ height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: '12px', marginBottom: '16px', overflow: 'hidden', position: 'relative' }}>
           {cover ? <img src={cover} alt={p.name} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} /> : <span style={{ fontSize: '64px' }}>{p.emoji || '📦'}</span>}
+          <div 
+            onClick={(e) => toggleWishlist(e, p.id)}
+            style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(255,255,255,0.8)', borderRadius: '50%', padding: 4, display: 'flex', cursor: 'pointer' }}
+          >
+            <span style={{color: wishlistItems.includes(p.id) ? 'var(--rose)' : 'var(--text-2)', filter: !wishlistItems.includes(p.id) ? 'grayscale(100%) opacity(60%)' : 'none' }}>
+              ❤️
+            </span>
+          </div>
         </div>
+        <div style={{ fontSize: '12px', color: 'var(--accent)', fontWeight: 'bold' }}>{p.seller}</div>
         <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '8px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', height: '44px', lineHeight: '22px' }}>{p.name}</div>
         <div style={{ fontSize: '13px', color: 'var(--text-2)', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 600 }}>{p.cat}</div>
         <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)', marginTop: 'auto' }}>{formatCurrency(p.price)}</div>
-        <div style={{ fontSize: '13px', color: 'var(--emerald)', marginTop: '4px', fontWeight: 600 }}>In stock</div>
+        {outOfStock ? (
+           <div style={{ fontSize: '13px', color: 'var(--rose)', marginTop: '4px', fontWeight: 600 }}>Out of stock</div>
+        ) : (
+           <div style={{ fontSize: '13px', color: 'var(--emerald)', marginTop: '4px', fontWeight: 600 }}>In stock</div>
+        )}
       </Link>
     )
   }
@@ -264,11 +311,21 @@ export default function Home({ customer }) {
                   const cover = p.emoji?.startsWith('data:image') ? p.emoji.split('||')[0] : null
                   return (
                     <Link to={`/product/${p.id}`} key={p.id} className="amz-mini-prod">
-                      <div className="amz-mini-img">
+                      <div className="amz-mini-img" style={{ position: 'relative' }}>
                         {cover ? <img src={cover} alt={p.name} /> : <span>{p.emoji || '📦'}</span>}
+                        <div 
+                          onClick={(e) => toggleWishlist(e, p.id)}
+                          style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(255,255,255,0.8)', borderRadius: '50%', padding: 2, display: 'flex', fontSize: '10px', cursor: 'pointer' }}
+                        >
+                          <span style={{color: wishlistItems.includes(p.id) ? 'var(--rose)' : 'var(--text-2)', filter: !wishlistItems.includes(p.id) ? 'grayscale(100%) opacity(60%)' : 'none'}}>
+                            ❤️
+                          </span>
+                        </div>
                       </div>
+                      <div style={{ fontSize: '10px', color: 'var(--accent)', fontWeight: 'bold', marginTop: '4px' }}>{p.seller}</div>
                       <span className="amz-mini-name">{p.name}</span>
                       <div className="amz-mini-price">{formatCurrency(p.price)}</div>
+                      {p.stock <= 0 && <div style={{ fontSize: '10px', color: 'var(--rose)', fontWeight: 600 }}>Out of stock</div>}
                     </Link>
                   )
                 })}

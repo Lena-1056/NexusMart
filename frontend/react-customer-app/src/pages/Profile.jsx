@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { User, LogOut, Settings, CreditCard, MapPin, Edit2 } from 'lucide-react'
 import { SERVICES, getAuthHeaders } from '../services/api'
 
-export default function Profile({ customer, handleLogout }) {
+export default function Profile({ customer, handleLogout, setDeliveryLocation }) {
   const navigate = useNavigate()
   const location = useLocation()
   const [activeTab, setActiveTab] = useState(() => {

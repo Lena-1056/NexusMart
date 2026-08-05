@@ -323,40 +323,48 @@ export default function ProductDetails({ customer, deliveryLocation, setIsLocMod
               </span>
             </div>
 
-            <div style={{ color: 'var(--emerald)', fontSize: '18px', fontWeight: 700 }}>
-              In stock
-            </div>
+            {product.stock <= 0 ? (
+              <div style={{ color: 'var(--rose)', fontSize: '18px', fontWeight: 700 }}>
+                Out of stock
+              </div>
+            ) : (
+              <>
+                <div style={{ color: product.stock <= 10 ? 'var(--rose)' : 'var(--emerald)', fontSize: '18px', fontWeight: 700 }}>
+                  {product.stock <= 10 ? `Only ${product.stock} left in stock - order soon.` : 'In stock'}
+                </div>
 
-            <div className="amz-form-group" style={{ margin: 0 }}>
-              <label className="amz-form-label" style={{ fontWeight: 400, fontSize: '13px' }}>Quantity:</label>
-              <select className="amz-form-select" value={qty} onChange={e => setQty(parseInt(e.target.value))} style={{ width: '100%', padding: '6px' }}>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(n => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
-              </select>
-            </div>
+                <div className="amz-form-group" style={{ margin: 0 }}>
+                  <label className="amz-form-label" style={{ fontWeight: 400, fontSize: '13px' }}>Quantity:</label>
+                  <select className="amz-form-select" value={qty} onChange={e => setQty(parseInt(e.target.value))} style={{ width: '100%', padding: '6px', color: 'var(--text-main)', background: 'var(--bg-base)' }}>
+                    {Array.from({ length: Math.min(10, product.stock) }, (_, i) => i + 1).map(n => (
+                      <option key={n} value={n} style={{ color: 'var(--text-main)', background: 'var(--bg-base)' }}>{n}</option>
+                    ))}
+                  </select>
+                </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
-              <button 
-                onClick={handleAddToCart}
-                disabled={addingToCart}
-                className="amz-btn-yellow"
-                style={{ width: '100%', padding: '10px' }}
-              >
-                {addingToCart ? 'Adding to Cart...' : 'Add to Cart'}
-              </button>
-              
-              <button 
-                onClick={async () => { 
-                  const success = await handleAddToCart(); 
-                  if (success) navigate('/cart'); 
-                }}
-                className="amz-btn-orange"
-                style={{ width: '100%', padding: '10px' }}
-              >
-                Buy Now
-              </button>
-            </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                  <button 
+                    onClick={handleAddToCart}
+                    disabled={addingToCart}
+                    className="amz-btn-yellow"
+                    style={{ width: '100%', padding: '10px' }}
+                  >
+                    {addingToCart ? 'Adding to Cart...' : 'Add to Cart'}
+                  </button>
+                  
+                  <button 
+                    onClick={async () => { 
+                      const success = await handleAddToCart(); 
+                      if (success) navigate('/cart'); 
+                    }}
+                    className="amz-btn-orange"
+                    style={{ width: '100%', padding: '10px' }}
+                  >
+                    Buy Now
+                  </button>
+                </div>
+              </>
+            )}
 
             {cartMessage && (
               <div style={{ marginTop: '12px', padding: '8px', background: cartMessage.includes('Failed') ? 'rgba(244,63,94,0.1)' : 'rgba(16,185,129,0.1)', color: cartMessage.includes('Failed') ? 'var(--rose)' : 'var(--emerald)', borderRadius: '8px', fontSize: '13px', textAlign: 'center', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>

@@ -144,7 +144,7 @@ function Layout({ customer, handleLogout, deliveryLocation, setDeliveryLocation,
               <select 
                 value={currencyCode} 
                 onChange={(e) => setCurrencyCode(e.target.value)}
-                style={{ padding: '6px 10px', borderRadius: '4px', background: 'var(--bg-card)', color: '#000', border: '1px solid #ccc', outline: 'none', cursor: 'pointer', alignSelf: 'center', fontWeight: 'bold' }}
+                style={{ padding: '6px 10px', borderRadius: '4px', background: 'var(--bg-card)', color: '#fff', border: '1px solid #ccc', outline: 'none', cursor: 'pointer', alignSelf: 'center', fontWeight: 'bold' }}
               >
                 {currencies.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
@@ -185,6 +185,10 @@ function Layout({ customer, handleLogout, deliveryLocation, setDeliveryLocation,
                     <span className="top-line">Returns</span>
                     <span className="bottom-line">& Orders</span>
                   </Link>
+                  <Link to="/wishlist" className="header-action-btn" style={{ flexDirection: 'row', alignItems: 'center', gap: '6px' }}>
+                    <Heart size={24} />
+                    <span className="bottom-line" style={{ marginTop: '0' }}>Wishlist</span>
+                  </Link>
                   <Link to="/cart" className="cart-btn">
                     <ShoppingCart size={32} />
                     <span className="cart-text" style={{ marginLeft: '4px' }}>Cart</span>
@@ -195,6 +199,10 @@ function Layout({ customer, handleLogout, deliveryLocation, setDeliveryLocation,
                   <Link to="/login" className="header-action-btn">
                     <span className="top-line">Hello, sign in</span>
                     <span className="bottom-line">Account & Lists</span>
+                  </Link>
+                  <Link to="/wishlist" className="header-action-btn" style={{ flexDirection: 'row', alignItems: 'center', gap: '6px' }}>
+                    <Heart size={24} />
+                    <span className="bottom-line" style={{ marginTop: '0' }}>Wishlist</span>
                   </Link>
                   <Link to="/cart" className="cart-btn">
                     <ShoppingCart size={32} />

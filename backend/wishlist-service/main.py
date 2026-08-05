@@ -68,6 +68,20 @@ def toggle_wishlist(req: ToggleRequest):
             conn.commit()
             return {"status": "added"}
 
+@app.post("/api/wishlist/add")
+def add_wishlist(req: ToggleRequest):
+    with db() as (cur, conn):
+        cur.execute("SELECT id FROM wishlists_schema.wishlists WHERE customer_email = %s AND product_id = %s", (req.email, req.productId))
+        existing = cur.fetchone()
+        if not existing:
+            wid = "WSH-" + uuid.uuid4().hex[:8]
+            cur.execute(
+                "INSERT INTO wishlists_schema.wishlists (id, customer_email, product_id) VALUES (%s, %s, %s)",
+                (wid, req.email, req.productId)
+            )
+            conn.commit()
+        return {"status": "added"}
+
 
 import uvicorn
 if __name__ == "__main__":

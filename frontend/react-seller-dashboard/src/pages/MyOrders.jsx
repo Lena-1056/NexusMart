@@ -104,6 +104,7 @@ export default function MyOrders({ seller }) {
               <th>Customer</th>
               <th>Address</th>
               <th>Product</th>
+              <th>Qty</th>
               <th>Amount</th>
               <th>Date</th>
               <th>Method</th>
@@ -114,7 +115,7 @@ export default function MyOrders({ seller }) {
           </thead>
           <tbody>
             {orders.length === 0 ? (
-              <tr><td colSpan="10" style={{textAlign:'center', padding: '40px', color: 'var(--text-2)'}}>No orders received yet. Keep promoting your store!</td></tr>
+              <tr><td colSpan="11" style={{textAlign:'center', padding: '40px', color: 'var(--text-2)'}}>No orders received yet. Keep promoting your store!</td></tr>
             ) : orders.map(o => (
               <tr key={o.id}>
                 <td style={{fontFamily: 'monospace', color: 'var(--text-2)', fontSize: 12}}>{o.id}</td>
@@ -124,9 +125,10 @@ export default function MyOrders({ seller }) {
                   <div>{o.product}</div>
                   <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{o.sub_category || 'N/A'}</div>
                 </td>
+                <td>{o.quantity || 1}</td>
                 <td><strong>{formatCurrency(o.amount)}</strong></td>
                 <td>{o.date}</td>
-                <td><strong>{o.paymentMethod || 'N/A'}</strong></td>
+                <td><strong>{o.payment_method || o.paymentMethod || 'N/A'}</strong></td>
                 <td>
                   <span className={`badge ${o.payment === 'PAID' ? 'badge-approved' : o.payment === 'REFUNDED' ? 'badge-rejected' : 'badge-pending'}`}>
                     {o.payment}

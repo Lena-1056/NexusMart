@@ -73,7 +73,7 @@ export default function OrderMonitoring() {
         </div>
         <table>
           <thead>
-            <tr><th>Order ID</th><th>Customer</th><th>Address</th><th>Seller</th><th>Product</th><th>Amount</th><th>Status</th><th>Method</th><th>Payment</th><th>Date</th><th>Update Status</th></tr>
+            <tr><th>Order ID</th><th>Customer</th><th>Address</th><th>Seller</th><th>Product</th><th>Qty</th><th>Amount</th><th>Status</th><th>Method</th><th>Payment</th><th>Date</th><th>Update Status</th></tr>
           </thead>
           <tbody>
             {visible.map(o => (
@@ -86,9 +86,10 @@ export default function OrderMonitoring() {
                   <div>{o.product}</div>
                   <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{o.sub_category || 'N/A'}</div>
                 </td>
+                <td>{o.quantity || 1}</td>
                 <td><strong>{formatCurrency(o.amount)}</strong></td>
                 <td><span className={`badge ${sCls[o.status]}`}>{o.status}</span></td>
-                <td><strong>{o.paymentMethod || 'N/A'}</strong></td>
+                <td><strong>{o.payment_method || o.paymentMethod || 'N/A'}</strong></td>
                 <td><span className={`badge ${pCls[o.payment]}`}>{o.payment}</span></td>
                 <td>{o.date}</td>
                 <td onClick={e => e.stopPropagation()}>
@@ -120,8 +121,9 @@ export default function OrderMonitoring() {
               <strong>Delivery To:</strong> <span>{selectedOrder.address || 'N/A'}</span>
               <strong>Seller:</strong>      <span>{selectedOrder.seller}</span>
               <strong>Product:</strong>     <span>{selectedOrder.product} / {selectedOrder.sub_category || 'N/A'}</span>
+              <strong>Quantity:</strong>    <span>{selectedOrder.quantity || 1}</span>
               <strong>Amount:</strong>      <span>{formatCurrency(selectedOrder.amount)}</span>
-              <strong>Method:</strong>      <span>{selectedOrder.paymentMethod || 'N/A'}</span>
+              <strong>Method:</strong>      <span>{selectedOrder.payment_method || selectedOrder.paymentMethod || 'N/A'}</span>
               <strong>Payment:</strong>     <span className={`badge ${pCls[selectedOrder.payment]}`}>{selectedOrder.payment}</span>
               <strong>Status:</strong>      <span className={`badge ${sCls[selectedOrder.status]}`}>{selectedOrder.status}</span>
               <strong>Order Date:</strong>  <span>{selectedOrder.date}</span>

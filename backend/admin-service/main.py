@@ -31,7 +31,7 @@ from pydantic import BaseModel
 from typing import Optional
 import jwt
 
-SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "enter_your_JWT_token")
+SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "Enter Your JWT token")
 ALGORITHM = "HS256"
 
 app = FastAPI(title="Admin Service", version="1.0.0")
@@ -76,7 +76,7 @@ DB_CONFIG = {
     "port":     5432,
     "dbname":   "ecommerce",
     "user":     "postgres",
-    "password": os.environ.get("DB_PASSWORD", "enter_your_database_password"),
+    "password": os.environ.get("DB_PASSWORD", "Enter your PostgreSQL password"),
 }
 
 @contextmanager
@@ -232,13 +232,13 @@ def update_seller_status(seller_id: str, body: StatusUpdate):
 @app.get("/api/products")
 def list_products():
     with db() as (cur, conn):
-        cur.execute("SELECT id, name, seller, cat, sub_category, brand, price, status, date, emoji, description FROM products_schema.products ORDER BY date DESC")
+        cur.execute("SELECT id, name, seller, cat, sub_category, brand, price, stock, status, date, emoji, description FROM products_schema.products ORDER BY date DESC")
         return jrows(cur.fetchall())
 
 @app.get("/api/products/{product_id}")
 def get_product(product_id: str):
     with db() as (cur, conn):
-        cur.execute("SELECT id, name, seller, cat, sub_category, brand, price, status, date, emoji, description FROM products_schema.products WHERE id = %s", (product_id,))
+        cur.execute("SELECT id, name, seller, cat, sub_category, brand, price, stock, status, date, emoji, description FROM products_schema.products WHERE id = %s", (product_id,))
         row = cur.fetchone()
         if not row:
             raise HTTPException(404, "Product not found")
@@ -249,7 +249,7 @@ def update_product_status(product_id: str, body: StatusUpdate):
     with db() as (cur, conn):
         cur.execute("""
             UPDATE products_schema.products SET status=%s WHERE id=%s
-            RETURNING id, name, seller, cat, sub_category, brand, price, status, date, emoji, description
+            RETURNING id, name, seller, cat, sub_category, brand, price, stock, status, date, emoji, description
         """, (body.status, product_id))
         row = cur.fetchone(); conn.commit()
         
@@ -271,7 +271,7 @@ def update_product_status(product_id: str, body: StatusUpdate):
 def list_orders():
     with db() as (cur, conn):
         cur.execute("""
-            SELECT o.id, o.customer, o.seller, o.product, o.amount, o.status, o.payment, o.date, p.sub_category, p.brand
+            SELECT o.id, o.customer, o.seller, o.product, o.amount, o.status, o.payment, o.payment_method, o.date, o.address, o.quantity, p.sub_category, p.brand
             FROM orders_schema.orders o
             LEFT JOIN products_schema.products p ON o.product = p.name
             ORDER BY o.date DESC

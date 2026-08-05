@@ -32,7 +32,7 @@ import bcrypt
 import jwt
 from datetime import datetime, timedelta
 
-SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "Enter your JWT token")
+SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "Enter your JWT secret key here")
 ALGORITHM = "HS256"
 
 def create_access_token(data: dict):
@@ -79,7 +79,7 @@ DB_CONFIG = {
     "port":     5432,
     "dbname":   "ecommerce",
     "user":     "postgres",
-    "password": os.environ.get("DB_PASSWORD", "Enter your PostgreSQL password"),
+    "password": os.environ.get("DB_PASSWORD", "Enter your PostgreSQL password here"),
 }
 
 def get_conn():
@@ -182,6 +182,7 @@ class ProductCreate(BaseModel):
     seller:      str
     cat:         str
     price:       float
+    stock:       int
     emoji:       Optional[str] = "📦"
     description: Optional[str] = None
     sub_category: Optional[str] = "Other"
@@ -412,7 +413,7 @@ def dashboard_stats(store_name: str):
 def list_all_products():
     with db_cursor() as (cur, conn):
         cur.execute("""
-            SELECT id, name, seller, cat, sub_category, brand, price, status, date, emoji, description
+            SELECT id, name, seller, cat, sub_category, brand, price, stock, status, date, emoji, description
             FROM products_schema.products
             ORDER BY date DESC
         """)
@@ -424,7 +425,7 @@ def list_all_products():
 def get_products_by_seller(store_name: str):
     with db_cursor() as (cur, conn):
         cur.execute("""
-            SELECT id, name, seller, cat, sub_category, brand, price, status, date, emoji, description
+            SELECT id, name, seller, cat, sub_category, brand, price, stock, status, date, emoji, description
             FROM products_schema.products
             WHERE seller = %s
             ORDER BY date DESC
@@ -443,10 +444,10 @@ def create_product(body: ProductCreate):
         with db_cursor() as (cur, conn):
             cur.execute("""
                 INSERT INTO products_schema.products
-                    (id, name, seller, cat, sub_category, brand, price, status, date, emoji, description)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, 'PENDING', %s, %s, %s)
-                RETURNING id, name, seller, cat, sub_category, brand, price, status, date, emoji, description
-            """, (product_id, body.name, body.seller, body.cat, body.sub_category, body.brand, body.price, today, body.emoji, body.description))
+                    (id, name, seller, cat, sub_category, brand, price, stock, status, date, emoji, description)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'PENDING', %s, %s, %s)
+                RETURNING id, name, seller, cat, sub_category, brand, price, stock, status, date, emoji, description
+            """, (product_id, body.name, body.seller, body.cat, body.sub_category, body.brand, body.price, body.stock, today, body.emoji, body.description))
             row = cur.fetchone()
             conn.commit()
     except Exception as e:
@@ -461,7 +462,7 @@ def update_product_status(product_id: str, body: StatusUpdate):
             UPDATE products_schema.products
             SET status = %s
             WHERE id = %s
-            RETURNING id, name, seller, cat, sub_category, brand, price, status, date, emoji, description
+            RETURNING id, name, seller, cat, sub_category, brand, price, stock, status, date, emoji, description
         """, (body.Status, product_id))
         row = cur.fetchone()
         conn.commit()
@@ -475,7 +476,7 @@ def update_product_status(product_id: str, body: StatusUpdate):
 def get_orders_by_seller(store_name: str):
     with db_cursor() as (cur, conn):
         cur.execute("""
-            SELECT o.id, o.customer, o.seller, o.product, o.amount, o.status, o.payment, o.date, p.sub_category, p.brand
+            SELECT o.id, o.customer, o.seller, o.product, o.amount, o.status, o.payment, o.payment_method, o.date, o.quantity, p.sub_category, p.brand
             FROM orders_schema.orders o
             LEFT JOIN products_schema.products p ON o.product = p.name
             WHERE o.seller = %s

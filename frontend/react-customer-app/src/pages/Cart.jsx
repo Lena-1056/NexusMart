@@ -10,6 +10,8 @@ export default function Cart({ customer }) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [recommended, setRecommended] = useState([])
+  const [savedItems, setSavedItems] = useState([])
+  const [selectedItems, setSelectedItems] = useState(new Set())
 
   useEffect(() => {
     fetchCart()
@@ -29,6 +31,16 @@ export default function Cart({ customer }) {
       }).filter(item => item.product)
       
       setItems(enrichedCart)
+      setSelectedItems(new Set(enrichedCart.map(item => item.product.id)))
+
+      // Fetch wishlist items
+      const wRes = await fetch(`${SERVICES.WISHLIST}/wishlist/${customer.email}`, { headers: getAuthHeaders() })
+      const wData = await wRes.json()
+      
+      const enrichedWishlist = wData.map(pid => {
+        return productsData.find(prod => prod.id === pid)
+      }).filter(Boolean)
+      setSavedItems(enrichedWishlist)
 
       // Fetch recommended products (not currently in cart)
       const notInCart = productsData.filter(p => p.status === 'APPROVED' && !enrichedCart.some(item => item.product_id === p.id))
@@ -70,10 +82,84 @@ export default function Cart({ customer }) {
     }
   }
 
+  const handleSaveForLater = async (productId) => {
+    try {
+      await fetch(`${SERVICES.WISHLIST}/wishlist/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ email: customer.email, productId })
+      })
+      
+      const movedItem = items.find(i => i.product.id === productId)
+      if (movedItem) {
+         setSavedItems(prev => [...prev, movedItem.product])
+      }
+      await handleRemove(productId)
+    } catch(err) {
+      console.error(err)
+    }
+  }
+
+  const handleMoveToCart = async (productId) => {
+    try {
+      // Add to cart
+      await fetch(`${SERVICES.CART}/cart/add`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ email: customer.email, productId, quantity: 1 })
+      })
+      
+      // Remove from wishlist
+      await fetch(`${SERVICES.WISHLIST}/wishlist/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ email: customer.email, productId })
+      })
+      
+      // Refresh cart to get updated state
+      fetchCart()
+    } catch(err) {
+      console.error(err)
+    }
+  }
+
+  const handleDeleteSaved = async (productId) => {
+    try {
+      await fetch(`${SERVICES.WISHLIST}/wishlist/toggle`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ email: customer.email, productId })
+      })
+      setSavedItems(prev => prev.filter(p => p.id !== productId))
+    } catch(err) {
+      console.error(err)
+    }
+  }
+
+  const toggleSelection = (productId) => {
+    const next = new Set(selectedItems)
+    if (next.has(productId)) {
+      next.delete(productId)
+    } else {
+      next.add(productId)
+    }
+    setSelectedItems(next)
+  }
+
+  const handleToggleAll = (e) => {
+    e.preventDefault()
+    if (selectedItems.size === items.length) {
+      setSelectedItems(new Set())
+    } else {
+      setSelectedItems(new Set(items.map(i => i.product.id)))
+    }
+  }
+
   if (loading) return <div className="loading" style={{ padding: '80px 0', display: 'flex', justifyContent: 'center' }}><div className="spinner"></div></div>
 
-  const subtotal = items.reduce((acc, item) => acc + (parseFloat(item.product.price) * item.quantity), 0)
-  const totalItemsCount = items.reduce((acc, item) => acc + item.quantity, 0)
+  const selectedCartItems = items.filter(item => selectedItems.has(item.product.id))
+  const subtotal = selectedCartItems.reduce((acc, item) => acc + (parseFloat(item.product.price) * item.quantity), 0)
+  const totalItemsCount = selectedCartItems.reduce((acc, item) => acc + item.quantity, 0)
 
   return (
     <div style={{ minHeight: '100vh', padding: '24px 0' }}>
@@ -83,7 +169,9 @@ export default function Cart({ customer }) {
         <div style={{ background: 'var(--bg-card)', borderRadius: '24px', padding: '32px', border: '1px solid var(--border-light)' }}>
           <h1 style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 4px 0' }}>Shopping Cart</h1>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderBottom: '1px solid #E7E7E7', paddingBottom: '8px', marginBottom: '20px' }}>
-            <a href="#" style={{ color: '#007185', textDecoration: 'none', fontSize: '14px' }} onClick={e => e.preventDefault()}>Deselect all items</a>
+            <a href="#" style={{ color: '#007185', textDecoration: 'none', fontSize: '14px' }} onClick={handleToggleAll}>
+              {selectedItems.size === items.length ? 'Deselect all items' : 'Select all items'}
+            </a>
             <span style={{ fontSize: '14px', color: '#565959' }}>Price</span>
           </div>
 
@@ -106,7 +194,12 @@ export default function Cart({ customer }) {
                 return (
                   <div key={p.id} style={{ display: 'flex', gap: '16px', borderBottom: '1px solid #E7E7E7', paddingBottom: '20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
-                      <input type="checkbox" defaultChecked style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
+                      <input 
+                        type="checkbox" 
+                        checked={selectedItems.has(p.id)}
+                        onChange={() => toggleSelection(p.id)}
+                        style={{ width: '18px', height: '18px', cursor: 'pointer' }} 
+                      />
                     </div>
                     
                     <Link to={`/product/${p.id}`} style={{ width: '180px', height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F7F7F7', borderRadius: '4px', overflow: 'hidden', padding: '8px' }}>
@@ -117,7 +210,13 @@ export default function Cart({ customer }) {
                       <Link to={`/product/${p.id}`} style={{ fontSize: '18px', fontWeight: 500, color: '#007185', textDecoration: 'none', lineHeight: '24px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                         {p.name}
                       </Link>
-                      <div style={{ color: '#007600', fontSize: '12px', fontWeight: 'bold' }}>In stock</div>
+                      {p.stock <= 0 ? (
+                        <div style={{ color: 'var(--rose)', fontSize: '12px', fontWeight: 'bold' }}>Out of stock</div>
+                      ) : p.stock <= 10 ? (
+                        <div style={{ color: 'var(--rose)', fontSize: '12px', fontWeight: 'bold' }}>Only {p.stock} left in stock - order soon.</div>
+                      ) : (
+                        <div style={{ color: '#007600', fontSize: '12px', fontWeight: 'bold' }}>In stock</div>
+                      )}
                       <div style={{ fontSize: '13px', color: '#565959' }}>
                         Eligible for <strong>FREE Shipping</strong>
                       </div>
@@ -129,8 +228,8 @@ export default function Cart({ customer }) {
                         This will be a gift <span style={{ color: '#007185' }}>Learn more</span>
                       </label>
 
-                      <div style={{ fontSize: '13px', color: '#0F1111', marginTop: '4px' }}>
-                        <strong>Seller:</strong> {p.seller || 'NexusMart'}
+                      <div style={{ fontSize: '13px', color: 'var(--text-1)', marginTop: '4px' }}>
+                        <strong>Seller:</strong> <span style={{ color: 'var(--accent)' }}>{p.seller || 'NexusMart'}</span>
                       </div>
 
                       {/* Controls row */}
@@ -149,6 +248,8 @@ export default function Cart({ customer }) {
                           <button 
                             className="amz-qty-btn"
                             onClick={() => handleUpdateQuantity(p.id, item.quantity + 1)}
+                            disabled={item.quantity >= p.stock}
+                            style={{ opacity: item.quantity >= p.stock ? 0.5 : 1, cursor: item.quantity >= p.stock ? 'not-allowed' : 'pointer' }}
                           >
                             +
                           </button>
@@ -157,7 +258,7 @@ export default function Cart({ customer }) {
                         <span style={{ color: 'var(--border-light)' }}>|</span>
                         <a onClick={() => handleRemove(p.id)} style={{ color: 'var(--rose)', textDecoration: 'none', fontSize: '13px', cursor: 'pointer', fontWeight: 600 }}>Delete</a>
                         <span style={{ color: 'var(--border-light)' }}>|</span>
-                        <a href="#" style={{ color: 'var(--accent)', textDecoration: 'none', fontSize: '13px' }} onClick={e => e.preventDefault()}>Save for later</a>
+                        <a href="#" style={{ color: 'var(--accent)', textDecoration: 'none', fontSize: '13px' }} onClick={(e) => { e.preventDefault(); handleSaveForLater(p.id) }}>Save for later</a>
                       </div>
                     </div>
 
@@ -170,6 +271,45 @@ export default function Cart({ customer }) {
 
               <div style={{ textAlign: 'right', fontSize: '18px', color: 'var(--text-main)', marginTop: '12px' }}>
                 Subtotal ({totalItemsCount} item{totalItemsCount !== 1 ? 's' : ''}): <strong>{formatCurrency(subtotal)}</strong>
+              </div>
+            </div>
+          )}
+
+          {savedItems.length > 0 && (
+            <div style={{ marginTop: '32px', paddingTop: '32px', borderTop: '1px solid #E7E7E7' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 20px 0' }}>Saved for later ({savedItems.length} items)</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {savedItems.map(p => {
+                  const cover = p.emoji?.startsWith('data:image') ? p.emoji.split('||')[0] : null
+                  return (
+                    <div key={p.id} style={{ display: 'flex', gap: '16px', borderBottom: '1px solid #E7E7E7', paddingBottom: '20px' }}>
+                      <Link to={`/product/${p.id}`} style={{ width: '150px', height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F7F7F7', borderRadius: '4px', overflow: 'hidden', padding: '8px' }}>
+                        {cover ? <img src={cover} alt={p.name} style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} /> : <span style={{ fontSize: '64px' }}>{p.emoji || '📦'}</span>}
+                      </Link>
+
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <Link to={`/product/${p.id}`} style={{ fontSize: '18px', fontWeight: 500, color: '#007185', textDecoration: 'none', lineHeight: '24px', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          {p.name}
+                        </Link>
+                        <div style={{ fontSize: '20px', fontWeight: 'bold', color: 'var(--text-main)' }}>
+                          {formatCurrency(p.price)}
+                        </div>
+                        <div style={{ color: '#007600', fontSize: '12px', fontWeight: 'bold' }}>In stock</div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '12px', flexWrap: 'wrap' }}>
+                          <button 
+                            onClick={() => handleMoveToCart(p.id)} 
+                            style={{ padding: '4px 12px', background: '#FFD814', border: '1px solid #FCD200', borderRadius: '8px', cursor: 'pointer', fontSize: '13px' }}
+                          >
+                            Move to cart
+                          </button>
+                          <span style={{ color: 'var(--border-light)' }}>|</span>
+                          <a onClick={() => handleDeleteSaved(p.id)} style={{ color: 'var(--accent)', textDecoration: 'none', fontSize: '13px', cursor: 'pointer' }}>Delete</a>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )}
@@ -195,8 +335,8 @@ export default function Cart({ customer }) {
             </label>
 
             <button 
-              disabled={items.length === 0}
-              onClick={() => navigate('/checkout', { state: { items, total: subtotal } })}
+              disabled={selectedItems.size === 0}
+              onClick={() => navigate('/checkout', { state: { items: selectedCartItems, total: subtotal } })}
               className="amz-btn-yellow"
               style={{ width: '100%', padding: '10px', fontSize: '14px' }}
             >

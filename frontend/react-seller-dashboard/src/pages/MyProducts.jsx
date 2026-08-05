@@ -76,6 +76,7 @@ export default function MyProducts({ seller }) {
   const [brand,   setBrand]   = useState('')
   const [price,   setPrice]   = useState('')
   const [desc,    setDesc]    = useState('')
+  const [stock,   setStock]   = useState(0)
   const [images,  setImages]  = useState([])
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
@@ -141,6 +142,7 @@ export default function MyProducts({ seller }) {
       const payload = {
         name, seller: seller.store, cat, sub_category: subCat, brand,
         price: parseFloat(price),
+        stock: parseInt(stock, 10),
         emoji: base64Images.join('||'),
         description: desc
       }
@@ -165,7 +167,7 @@ export default function MyProducts({ seller }) {
     finally { setLoading(false) }
   }
 
-  const resetForm = () => { setName(''); setBrand(''); setPrice(''); setCat('Electronics'); setDesc(''); setImages([]); setError('') }
+  const resetForm = () => { setName(''); setBrand(''); setPrice(''); setStock(0); setCat('Electronics'); setDesc(''); setImages([]); setError('') }
 
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -216,7 +218,7 @@ export default function MyProducts({ seller }) {
           <thead>
             <tr>
               <th>Image</th><th>Product</th><th>Category</th>
-              <th>Price</th><th>Date Added</th><th>Status</th>
+              <th>Price</th><th>Stock</th><th>Date Added</th><th>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -266,6 +268,7 @@ export default function MyProducts({ seller }) {
                     <div style={{ fontSize: 11, color: 'var(--text-3)' }}>{p.sub_category || 'Other'}</div>
                   </td>
                   <td><strong>{formatCurrency(p.price)}</strong></td>
+                  <td>{p.stock}</td>
                   <td>{p.date}</td>
                   <td><span className={`badge badge-${p.status.toLowerCase()}`}>{p.status}</span></td>
                 </tr>
@@ -418,7 +421,7 @@ export default function MyProducts({ seller }) {
                 />
               </div>
 
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:'0 16px' }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr 1fr', gap:'0 16px' }}>
                 <div className="form-group">
                   <label>Category</label>
                   <select className="form-control" style={{ maxWidth:'100%' }} value={cat} onChange={e => { setCat(e.target.value); setSubCat(SUB_CATEGORIES[e.target.value][0]); }}>
@@ -434,6 +437,10 @@ export default function MyProducts({ seller }) {
                 <div className="form-group">
                   <label>Price ({currencyCode})</label>
                   <input className="form-control" style={{ maxWidth:'100%' }} type="number" step="0.01" min="0.01" value={price} onChange={e => setPrice(e.target.value)} placeholder="0.00" required />
+                </div>
+                <div className="form-group">
+                  <label>Stock</label>
+                  <input className="form-control" style={{ maxWidth:'100%' }} type="number" min="0" value={stock} onChange={e => setStock(e.target.value)} placeholder="0" required />
                 </div>
               </div>
 

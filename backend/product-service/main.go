@@ -24,6 +24,7 @@ type Product struct {
 	Status string  `json:"status"`
 	Date   string  `json:"date"`
 	Emoji  string  `json:"emoji"`
+	Stock  int     `json:"stock"`
 }
 
 var db *sql.DB
@@ -67,7 +68,7 @@ func main() {
 
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == http.MethodGet {
-			rows, err := db.Query("SELECT id, name, seller, cat, price, status, date, emoji FROM products_schema.products")
+			rows, err := db.Query("SELECT id, name, seller, cat, price, status, date, emoji, stock FROM products_schema.products")
 			if err != nil {
 				http.Error(w, err.Error(), 500)
 				return
@@ -77,7 +78,7 @@ func main() {
 			var products []Product
 			for rows.Next() {
 				var p Product
-				if err := rows.Scan(&p.ID, &p.Name, &p.Seller, &p.Cat, &p.Price, &p.Status, &p.Date, &p.Emoji); err != nil {
+				if err := rows.Scan(&p.ID, &p.Name, &p.Seller, &p.Cat, &p.Price, &p.Status, &p.Date, &p.Emoji, &p.Stock); err != nil {
 					continue
 				}
 				products = append(products, p)
@@ -94,7 +95,7 @@ func main() {
 			date := time.Now().Format("2006-01-02")
 			
 			var p Product
-			err := db.QueryRow("INSERT INTO products_schema.products (id, name, seller, cat, price, status, date, emoji) VALUES ($1, $2, $3, $4, $5, 'PENDING', $6, $7) RETURNING id, name, seller, cat, price, status, date, emoji", id, req.Name, req.Seller, req.Cat, req.Price, date, req.Emoji).Scan(&p.ID, &p.Name, &p.Seller, &p.Cat, &p.Price, &p.Status, &p.Date, &p.Emoji)
+			err := db.QueryRow("INSERT INTO products_schema.products (id, name, seller, cat, price, status, date, emoji, stock) VALUES ($1, $2, $3, $4, $5, 'PENDING', $6, $7, $8) RETURNING id, name, seller, cat, price, status, date, emoji, stock", id, req.Name, req.Seller, req.Cat, req.Price, date, req.Emoji, req.Stock).Scan(&p.ID, &p.Name, &p.Seller, &p.Cat, &p.Price, &p.Status, &p.Date, &p.Emoji, &p.Stock)
 			if err != nil {
 				http.Error(w, err.Error(), 500)
 				return
@@ -116,7 +117,7 @@ func main() {
 			sellerId := parts[4] // wait, it's matching /api/products/seller/{storeName}
 			// Actually seller id or store name is stored in products table.
 			
-			rows, err := db.Query("SELECT id, name, seller, cat, price, status, date, emoji FROM products_schema.products WHERE seller = $1", sellerId)
+			rows, err := db.Query("SELECT id, name, seller, cat, price, status, date, emoji, stock FROM products_schema.products WHERE seller = $1", sellerId)
 			if err != nil {
 				http.Error(w, err.Error(), 500)
 				return
@@ -126,7 +127,7 @@ func main() {
 			var products []Product
 			for rows.Next() {
 				var p Product
-				if err := rows.Scan(&p.ID, &p.Name, &p.Seller, &p.Cat, &p.Price, &p.Status, &p.Date, &p.Emoji); err != nil {
+				if err := rows.Scan(&p.ID, &p.Name, &p.Seller, &p.Cat, &p.Price, &p.Status, &p.Date, &p.Emoji, &p.Stock); err != nil {
 					continue
 				}
 				products = append(products, p)
@@ -151,9 +152,21 @@ func main() {
 			json.NewDecoder(r.Body).Decode(&req)
 
 			var p Product
-			err := db.QueryRow("UPDATE products_schema.products SET status = $1 WHERE id = $2 RETURNING id, name, seller, cat, price, status, date, emoji", req.Status, id).Scan(&p.ID, &p.Name, &p.Seller, &p.Cat, &p.Price, &p.Status, &p.Date, &p.Emoji)
+			err := db.QueryRow("UPDATE products_schema.products SET status = $1 WHERE id = $2 RETURNING id, name, seller, cat, price, status, date, emoji, stock", req.Status, id).Scan(&p.ID, &p.Name, &p.Seller, &p.Cat, &p.Price, &p.Status, &p.Date, &p.Emoji, &p.Stock)
 			if err != nil {
 				http.Error(w, "Not found", 404)
+				return
+			}
+			json.NewEncoder(w).Encode(p)
+		} else if len(parts) >= 5 && parts[4] == "stock" && r.Method == http.MethodPut {
+			id := parts[3]
+			var req struct{ Quantity int }
+			json.NewDecoder(r.Body).Decode(&req)
+
+			var p Product
+			err := db.QueryRow("UPDATE products_schema.products SET stock = stock - $1 WHERE id = $2 RETURNING id, name, seller, cat, price, status, date, emoji, stock", req.Quantity, id).Scan(&p.ID, &p.Name, &p.Seller, &p.Cat, &p.Price, &p.Status, &p.Date, &p.Emoji, &p.Stock)
+			if err != nil {
+				http.Error(w, err.Error(), 500)
 				return
 			}
 			json.NewEncoder(w).Encode(p)

@@ -1,11 +1,11 @@
 Write-Host "Starting Frontend Apps..."
 
 # 1. Start the servers in the background
-start-process npm -ArgumentList "npm install & npm run dev" -WorkingDirectory "$PSScriptRoot\frontend\react-customer-app" -WindowStyle Hidden
-start-process npm -ArgumentList "npm install & npm run dev" -WorkingDirectory "$PSScriptRoot\frontend\react-seller-dashboard" -WindowStyle Hidden
-start-process npm -ArgumentList "npm install & npm run dev" -WorkingDirectory "$PSScriptRoot\frontend\react-admin-dashboard" -WindowStyle Hidden
-start-process npm -ArgumentList "npm install & npm run dev" -WorkingDirectory "$PSScriptRoot\frontend\react-delivery-partner-app" -WindowStyle Hidden
-start-process npm -ArgumentList "npm install & npm start" -WorkingDirectory "$PSScriptRoot\admin-onboarding\admin-onboarding-frontend" -WindowStyle Hidden
+start-process cmd -ArgumentList "/c npm install && npm run dev" -WorkingDirectory "$PSScriptRoot\frontend\react-customer-app" -WindowStyle Hidden
+start-process cmd -ArgumentList "/c npm install && npm run dev" -WorkingDirectory "$PSScriptRoot\frontend\react-seller-dashboard" -WindowStyle Hidden
+start-process cmd -ArgumentList "/c npm install && npm run dev" -WorkingDirectory "$PSScriptRoot\frontend\react-admin-dashboard" -WindowStyle Hidden
+start-process cmd -ArgumentList "/c npm install && npm run dev" -WorkingDirectory "$PSScriptRoot\frontend\react-delivery-partner-app" -WindowStyle Hidden
+start-process cmd -ArgumentList "/c npm install && npm start" -WorkingDirectory "$PSScriptRoot\admin-onboarding\admin-onboarding-frontend" -WindowStyle Hidden
 
 # 2. Wait 5 seconds to give Vite and Angular time to boot up
 Write-Host "Waiting 5 seconds for servers to boot up..."

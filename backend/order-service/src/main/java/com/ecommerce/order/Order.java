@@ -12,6 +12,7 @@ public class Order {
     public String customer;
     public String seller;
     public String product;
+    public int quantity;
     public double amount;
     public String status;
     public String payment;

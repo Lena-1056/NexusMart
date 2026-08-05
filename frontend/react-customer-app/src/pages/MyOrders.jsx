@@ -104,6 +104,7 @@ export default function MyOrders({ customer }) {
                 <div>
                   <div className="order-id">Order ID: <span>{order.id}</span></div>
                   <div className="order-date">Date: <span>{new Date(order.date).toLocaleDateString()}</span></div>
+                  <div className="order-date">Quantity: <span>{order.quantity || 1}</span></div>
                   {order.paymentMethod && <div className="order-date">Method: <span style={{ fontWeight: 600 }}>{order.paymentMethod}</span></div>}
                 </div>
                 {(['CREATED','ACCEPTED','PACKED','PENDING_PAYMENT','PROCESSING'].includes(order.status)) && (

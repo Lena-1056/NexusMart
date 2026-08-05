@@ -87,17 +87,18 @@ public class OrderController {
         }
         // -------------------------------
         
-        // Call Inventory Service to reserve stock
+        if (order.quantity <= 0) {
+            order.quantity = 1;
+        }
+
+        // Call Product Service to decrement stock
         try {
-            ResponseEntity<String> invRes = restTemplate.postForEntity(
-                "http://localhost:8098/api/inventory/reserve?productId=" + order.product + "&quantity=1", 
-                null, String.class);
-            if (!invRes.getStatusCode().is2xxSuccessful()) {
-                return ResponseEntity.badRequest().build(); // Out of stock
-            }
+            Map<String, Integer> stockReq = new HashMap<>();
+            stockReq.put("quantity", order.quantity);
+            restTemplate.put("http://localhost:9000/api/products/" + order.product + "/stock", stockReq);
         } catch (Exception e) {
-            System.err.println("Inventory reservation failed: " + e.getMessage());
-            // Fallback or fail
+            System.err.println("Stock decrement failed: " + e.getMessage());
+            return ResponseEntity.badRequest().build(); // Out of stock
         }
 
         // If payment is COD, status is CREATED awaiting seller acceptance
@@ -207,7 +208,13 @@ public class OrderController {
             }
             orderRepository.save(o);
             // Release inventory
-            restTemplate.postForEntity("http://localhost:8098/api/inventory/release?productId=" + o.product + "&quantity=1", null, String.class);
+            try {
+                Map<String, Integer> stockReq = new HashMap<>();
+                stockReq.put("quantity", -o.quantity);
+                restTemplate.put("http://localhost:9000/api/products/" + o.product + "/stock", stockReq);
+            } catch (Exception e) {
+                System.err.println("Inventory release failed: " + e.getMessage());
+            }
             
             Map<String, String> pInfo = getProductInfo(o.product);
             String html = generateOrderHtml(o, pInfo.get("name"), pInfo.get("image"));
@@ -362,7 +369,9 @@ public class OrderController {
 
             // Release inventory
             try {
-                restTemplate.postForEntity("http://localhost:8098/api/inventory/release?productId=" + o.product + "&quantity=1", null, String.class);
+                Map<String, Integer> stockReq = new HashMap<>();
+                stockReq.put("quantity", -o.quantity);
+                restTemplate.put("http://localhost:9000/api/products/" + o.product + "/stock", stockReq);
             } catch (Exception e) {
                 System.err.println("Inventory release failed: " + e.getMessage());
             }
@@ -518,7 +527,7 @@ public class OrderController {
             "<div style='width: 100px; height: 100px; display: flex; align-items: center; justify-content: center; font-size: 48px; background: #fff; border: 1px solid #ddd; border-radius: 4px; margin-right: 20px; text-align: center;'>" + (productImgUrl != null && !productImgUrl.trim().isEmpty() ? productImgUrl : "📦") + "</div>") +
             "<div>" +
             "<p style='margin: 0 0 10px 0; font-size: 16px;'><a href='http://localhost:5173/product/" + order.product + "' style='color: #007185; text-decoration: none;'>" + productName + "</a></p>" +
-            "<p style='margin: 0; font-weight: bold; font-size: 18px;'>₹" + order.amount + "</p>" +
+            "<p style='margin: 0; font-weight: bold; font-size: 18px;'>₹" + order.amount + " (Qty: " + order.quantity + ")</p>" +
             "<div style='margin-top: 10px;'><a href='http://localhost:5173/product/" + order.product + "' style='display: inline-block; background-color: #e3f2fd; color: #007185; text-decoration: none; padding: 6px 12px; border-radius: 16px; font-weight: bold; font-size: 12px;'>View item</a></div>" +
             "</div>" +
             "</div>" +
