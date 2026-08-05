@@ -24,7 +24,7 @@ DB_CONFIG = {
     "port": 5432,
     "dbname": "ecommerce",
     "user": "postgres",
-    "password": os.environ.get("DB_PASSWORD", ""),
+    "password": os.environ.get("DB_PASSWORD", "Enter your PostgreSQL password here"),
 }
 
 @contextlib.contextmanager

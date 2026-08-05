@@ -72,8 +72,8 @@ import threading
 
 SMTP_HOST = "smtp.gmail.com"
 SMTP_PORT = 465
-SMTP_USER = "Enter your SMTP email here"
-SMTP_PASS = os.environ.get("SMTP_PASSWORD", "Enter your SMTP password here")
+SMTP_USER = "Enter your SMTP email address here"  # Use environment variable for security
+SMTP_PASS = os.environ.get("SMTP_PASSWORD", "Enter your SMTP password here")  # Use environment variable for security
 
 import re
 from email.mime.image import MIMEImage

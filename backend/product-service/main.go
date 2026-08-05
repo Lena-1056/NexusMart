@@ -33,7 +33,7 @@ func initDB() {
 	var err error
 	dbPassword := os.Getenv("DB_PASSWORD")
 	if dbPassword == "" {
-		dbPassword = "postgres" // Fallback for safety, though env should provide it
+		dbPassword = "1234567890" // Fallback for safety, though env should provide it
 	}
 	connStr := fmt.Sprintf("user=postgres password=%s dbname=ecommerce sslmode=disable", dbPassword)
 	db, err = sql.Open("postgres", connStr)

@@ -31,7 +31,7 @@ from pydantic import BaseModel
 from typing import Optional
 import jwt
 
-SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "Enter Your JWT token")
+SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "Enter your JWT secret key here")
 ALGORITHM = "HS256"
 
 app = FastAPI(title="Admin Service", version="1.0.0")
@@ -76,7 +76,7 @@ DB_CONFIG = {
     "port":     5432,
     "dbname":   "ecommerce",
     "user":     "postgres",
-    "password": os.environ.get("DB_PASSWORD", "Enter your PostgreSQL password"),
+    "password": os.environ.get("DB_PASSWORD", "Enter your PostgreSQL password here"),
 }
 
 @contextmanager

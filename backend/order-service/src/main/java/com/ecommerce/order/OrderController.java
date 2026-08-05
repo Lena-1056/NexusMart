@@ -46,7 +46,7 @@ public class OrderController {
         if (order.customerCity != null && !order.customerCity.isEmpty()) {
             try {
                 // 1. Get original product details to find its name
-                ResponseEntity<List> productsRes = restTemplate.getForEntity("http://localhost:8081/api/products", List.class);
+                ResponseEntity<List> productsRes = restTemplate.getForEntity("http://localhost:9000/api/products", List.class);
                 if (productsRes.getStatusCode().is2xxSuccessful() && productsRes.getBody() != null) {
                     List<Map<String, Object>> allProducts = (List<Map<String, Object>>) productsRes.getBody();
                     String targetProductName = null;
@@ -422,7 +422,7 @@ public class OrderController {
 
     private Map<String, String> getProductInfo(String productId) {
         try {
-            ResponseEntity<List> productsRes = restTemplate.getForEntity("http://localhost:8084/api/products", List.class);
+            ResponseEntity<List> productsRes = restTemplate.getForEntity("http://localhost:9000/api/products", List.class);
             if (productsRes.getStatusCode().is2xxSuccessful() && productsRes.getBody() != null) {
                 List<Map<String, Object>> allProducts = (List<Map<String, Object>>) productsRes.getBody();
                 for (Map<String, Object> p : allProducts) {
